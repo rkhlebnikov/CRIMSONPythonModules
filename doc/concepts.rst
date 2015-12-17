@@ -4,6 +4,7 @@ Concepts
 
 There are several basic concepts that CRIMSON uses to allow specification of the simulation setup:
 
+* Vessel tree
 * Geometric model
 * Simulation mesh
 * Solver setup manager
@@ -12,6 +13,22 @@ There are several basic concepts that CRIMSON uses to allow specification of the
 * Solver setup
 * Solver study
 
+
+.. _vessel-tree:
+
+Vessel tree
+===========
+
+A vessel tree contains the information about the vessels and which vessels form connected components.
+
+A vessel tree is passed to the ``setupSolver`` method of a solver study and has the following API:
+
+``getActiveConnectedComponentsMap()``
+    Returns a ``dict`` object mapping from UIDs of vessels (as used by :mod:`face identifiers <CRIMSONCore.FaceIdentifier>`)
+    to the connected component index. This means that all vessels having the same connected component index form a single
+    connected simulation domain.
+
+.. image:: images/components.png
 
 .. _geometric-model:
 
@@ -296,10 +313,10 @@ A solver study class is expected to implement the following interface:
 ``getBoundaryConditionSetNodeUIDs()``
     Return the stored node uids of the boundary condition sets (``list(strings)``).
 
-``writeSolverSetup(vesselForestData, geometricModelData, meshData, solverSetup, boundaryConditions, vesselPathNames, solutionStorage)``
+``writeSolverSetup(vesselTreeData, geometricModelData, meshData, solverSetup, boundaryConditions, vesselPathNames, solutionStorage)``
     Write the setup for the solver. The parameters are as follows:
 
-    :``vesselForestData``: a vessel forest data object (only present for models built in CRIMSON)
+    :``vesselTreeData``: a :ref:`vessel tree data <vessel-tree>` object (only present for models built in CRIMSON)
     :``geometricModelData``: a :ref:`geometric model data <geometric-model>` object.
     :``meshData``: a :ref:`simulation mesh data <simulation-mesh>` object.
     :``solverSetup``: a :ref:`solver setup  <solver-setup>` object.
