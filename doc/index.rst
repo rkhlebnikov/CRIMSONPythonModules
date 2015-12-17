@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 CRIMSON Solver setup extension guide
-===================================
+====================================
 
 This document describes the python-based interface for extending CRIMSON with your own 
 approaches to solver setup. 
