@@ -1,0 +1,17 @@
+from distutils.core import setup
+
+setup(name='CRIMSON',
+      version='1.0',
+      description='CRIMSON core utilities',
+      packages=['CRIMSONCore',
+                'CRIMSONSolver',
+                'CRIMSONSolver.BoundaryConditions',
+                'CRIMSONSolver.BoundaryConditionSets',
+                'CRIMSONSolver.SolverSetupManagers',
+                'CRIMSONSolver.SolverSetups',
+                'CRIMSONSolver.SolverStudies'
+                ],
+      py_modules=['upgradeScene'],
+      data_files = [('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies', ['CRIMSONSolver/SolverStudies/${presolver_executable_filename}',]),
+                    ('${python_lib_folder}site-packages/CRIMSONSolver/BoundaryConditions/ui', ['CRIMSONSolver/BoundaryConditions/ui/PrescribedVelocitiesBoundaryConditionEditorWidget.ui',])]
+      )

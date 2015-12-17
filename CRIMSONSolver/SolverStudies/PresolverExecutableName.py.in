@@ -1,0 +1,2 @@
+def getPresolverExecutableName():
+    return "${presolver_executable_filename}"
