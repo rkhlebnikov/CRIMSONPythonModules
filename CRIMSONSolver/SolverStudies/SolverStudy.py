@@ -16,6 +16,8 @@ from CRIMSONSolver.SolverSetupManagers.FlowProfileGenerator import FlowProfileGe
 from CRIMSONSolver.SolverStudies.FileList import FileList
 from CRIMSONSolver.SolverStudies.SolverInpData import SolverInpData
 from CRIMSONSolver.SolverStudies.Timer import Timer
+from CRIMSONSolver.BoundaryConditions import NoSlip, InitialPressure, RCR, ZeroPressure, PrescribedVelocities, \
+    DeformableWall
 
 
 class SolverStudy(object):
@@ -135,7 +137,8 @@ class SolverStudy(object):
 
                 Utils.logInformation('Done')
 
-        except:
+        except Exception as e:
+            Utils.logError(str(e))
             fileList.close()
             raise
 
@@ -165,7 +168,8 @@ class SolverStudy(object):
                     if blockDescriptor.totalBytes == -1:  # header only
                         rawWriter.writeHeader(blockName, 0, blockDescriptor.headerElements)
                     elif blockName not in dataBlocksToReplace:  # header and data
-                        rawWriter.writeRawData(blockName, rawReader.getRawData(blockName), blockDescriptor.headerElements)
+                        rawWriter.writeRawData(blockName, rawReader.getRawData(blockName),
+                                               blockDescriptor.headerElements)
 
                 PhastaSolverIO.writePhastaFile(rawWriter, PhastaConfig.restartConfig, newFields)
 
@@ -241,36 +245,40 @@ class SolverStudy(object):
             # node indices are 1-based for presolver
             outFileCoordinates.write('{0} {1[0]} {1[1]} {1[2]}\n'.format(i + 1, meshData.getNodeCoordinates(i)))
 
+    def _writeNbc(self, meshData, faceIdentifiers, outputFile):
+        nodeIndices = set()
+
+        for faceIdentifier in faceIdentifiers:
+            nodeIndices.update(meshData.getNodeIdsForFace(faceIdentifier))
+
+        for i in sorted(nodeIndices):
+            outputFile.write('{0}\n'.format(i + 1))  # Node indices are 1-based for presolver
+
+    def _writeEbc(self, meshData, faceIdentifiers, outputFile):
+        for faceIdentifier in faceIdentifiers:
+            for info in meshData.getMeshFaceInfoForFace(faceIdentifier):
+                l = '{0}\n'.format(
+                    ' '.join(str(x + 1) for x in info))  # element and node indices are 1-based for presolver
+                outputFile.write(l)
+
     def _writeNbcEbc(self, solidModelData, meshData, faceIndicesAndFileNames, fileList):
-        wallNodeIndices = set()
+        allFaceIdentifiers = [solidModelData.getFaceIdentifier(i) for i in
+                              xrange(solidModelData.getNumberOfFaceIdentifiers())]
 
-        outFileWallNbc = fileList[os.path.join('presolver', 'wall.nbc')]
-        outFileAllExteriorFacesEbc = fileList[os.path.join('presolver', 'all_exterior_faces.ebc')]
+        # Write wall.nbc
+        self._writeNbc(meshData, [id for id in allFaceIdentifiers if id.faceType == FaceType.ftWall],
+                       fileList[os.path.join('presolver', 'wall.nbc')])
 
+        # Write all_eterior_faces.ebc
+        self._writeEbc(meshData, allFaceIdentifiers, fileList[os.path.join('presolver', 'all_exterior_faces.ebc')])
+
+        # Write per-face-identifier ebc and nbc files
         for i in xrange(solidModelData.getNumberOfFaceIdentifiers()):
             faceIdentifier = solidModelData.getFaceIdentifier(i)
 
             baseFileName = os.path.join('presolver', faceIndicesAndFileNames[faceIdentifier][1])
-            outFileNbc = fileList[baseFileName + '.nbc']
-            outFileEbc = fileList[baseFileName + '.ebc']
-
-            allNodeIndicesForFace = meshData.getNodeIdsForFace(faceIdentifier)
-            if faceIdentifier.faceType == FaceType.ftWall:
-                wallNodeIndices.update(allNodeIndicesForFace)
-
-            for i in sorted(allNodeIndicesForFace):
-                outFileNbc.write('{0}\n'.format(i + 1))  # Node indices are 1-based for presolver
-
-            # Ebc's can be written directly
-            for info in meshData.getMeshFaceInfoForFace(faceIdentifier):
-                l = '{0}\n'.format(
-                    ' '.join(str(x + 1) for x in info))  # element and node indices are 1-based for presolver
-                outFileEbc.write(l)
-                outFileAllExteriorFacesEbc.write(l)
-
-        # Nbc's need to be stored in a set to avoid duplicates
-        for i in sorted(wallNodeIndices):
-            outFileWallNbc.write('{0}\n'.format(i + 1))  # Node indices are 1-based for presolver
+            self._writeNbc(meshData, [faceIdentifier], fileList[baseFileName + '.nbc'])
+            self._writeEbc(meshData, [faceIdentifier], fileList[baseFileName + '.ebc'])
 
     def _writeSolverSetup(self, solverInpData, fileList):
         solverInpFile = fileList['solver.inp', 'wb']
@@ -281,8 +289,27 @@ class SolverStudy(object):
                 solverInpFile.write('    {0[0]} : {0[1]}\n'.format(kv))
             solverInpFile.write('# }\n')
 
+    def _validateBoundaryConditions(self, boundaryConditions):
+        # Check unique BC's
+        bcByType = {}
+        for bc in boundaryConditions:
+            bcByType.setdefault(bc.__class__.__name__, []).append(bc)
+
+        hadError = False
+
+        for bcType, bcs in bcByType.iteritems():
+            if bcs[0].unique and len(bcs) > 1:
+                Utils.logError(
+                    'Multiple instances of foundary condition {0} are not allowed in a single study'.format(bcType))
+                hadError = True
+
+        return not hadError
+
     def _writeBoundaryConditions(self, solidModelData, meshData, boundaryConditions, faceIndicesAndFileNames,
                                  solverInpData, fileList):
+        if not self._validateBoundaryConditions(boundaryConditions):
+            raise RuntimeError('Invalid boundary conditions. Aborting.')
+
         supreFile = fileList[os.path.join('presolver', 'the.supre')]
 
         class RCRInfo(object):
@@ -303,16 +330,29 @@ class SolverStudy(object):
 
         validFaceIdentifiers = lambda bc: (x for x in bc.faceIdentifiers if
                                            solidModelData.faceIdentifierIndex(x) != -1)
-        for bc in sorted(boundaryConditions, key=lambda x: type(x).__name__):
-            if bc.__class__.__name__ == 'NoSlip':
+
+        is_boundary_condition_type = lambda bc, bcclass: bc.__class__.__name__ == bcclass.__name__
+
+        initialPressure = 13332
+
+        # Processing priority for a particular BC type defines the order of processing the BCs
+        # Default value is assumed to be 1. The higher the priority, the later the BC is processed
+        bcProcessingPriorities = {DeformableWall.DeformableWall.__name__: 2}
+        bcCompare = lambda l, r: \
+            cmp([bcProcessingPriorities.get(l.__class__.__name__, 1), l.__class__.__name__],
+                [bcProcessingPriorities.get(r.__class__.__name__, 1), r.__class__.__name__])
+
+        for bc in sorted(boundaryConditions, cmp=bcCompare):
+            if is_boundary_condition_type(bc, NoSlip.NoSlip):
                 for faceId in validFaceIdentifiers(bc):
                     supreFile.write('noslip {0}.nbc\n'.format(faceIndicesAndFileNames[faceId][1]))
                 supreFile.write('\n')
 
-            elif bc.__class__.__name__ == 'InitialPressure':
-                supreFile.write('initial_pressure {0}\n\n'.format(bc.getProperties()['Initial pressure']))
+            elif is_boundary_condition_type(bc, InitialPressure.InitialPressure):
+                initialPressure = bc.getProperties()['Initial pressure']
+                supreFile.write('initial_pressure {0}\n\n'.format(initialPressure))
 
-            elif bc.__class__.__name__ == 'RCR':
+            elif is_boundary_condition_type(bc, RCR.RCR):
                 rcrtFile = fileList['rcrt.dat']
                 faceInfoFile = fileList['faceInfo.dat']
 
@@ -332,14 +372,14 @@ class SolverStudy(object):
                                    '{0[Distal resistance]}\n'
                                    '0 0.0\n'
                                    '1.1 0.0\n'.format(bc.getProperties()))
-
-
-            elif bc.__class__.__name__ == 'ZeroPressure':
-                for faceId in validFaceIdentifiers(bc):
-                    supreFile.write('noslip {0}.nbc\n'.format(faceIndicesAndFileNames[faceId][1]))
                 supreFile.write('\n')
 
-            elif bc.__class__.__name__ == 'PrescribedVelocities':
+            elif is_boundary_condition_type(bc, ZeroPressure.ZeroPressure):
+                for faceId in validFaceIdentifiers(bc):
+                    supreFile.write('zero_pressure {0}.ebc\n'.format(faceIndicesAndFileNames[faceId][1]))
+                supreFile.write('\n')
+
+            elif is_boundary_condition_type(bc, PrescribedVelocities.PrescribedVelocities):
                 faceInfoFile = fileList['faceInfo.dat']
 
                 bctFile = fileList['bct.dat']
@@ -361,6 +401,8 @@ class SolverStudy(object):
                     faceInfoFile.write('PrescribedVelocities {0[0]} {0[1]}\n'.format(faceIndicesAndFileNames[faceId]))
                     bctInfo.faceIds.append(str(faceIndicesAndFileNames[faceId][0]))
 
+                supreFile.write('\n')
+
                 def writeBctProfile(file, wave):
                     for faceId in validFaceIdentifiers(bc):
                         flowProfileGenerator = FlowProfileGenerator(bc.getProperties()['Profile type'], solidModelData,
@@ -377,6 +419,45 @@ class SolverStudy(object):
                 writeBctProfile(bctSteadyFile,
                                 numpy.array([[waveform[0, 0], steadyWaveformValue],
                                              [waveform[-1, 0], steadyWaveformValue]]))
+
+            elif is_boundary_condition_type(bc, DeformableWall.DeformableWall):
+                # Write the ebc for deformable wall
+                self._writeEbc(meshData, validFaceIdentifiers(bc),
+                               fileList[os.path.join('presolver', 'deformable_wall.ebc')])
+
+                shearConstant = 0.8333333
+
+                supreFile.write('deformable_wall deformable_wall.ebc\n')
+                supreFile.write('fix_free_edge_nodes deformable_wall.ebc\n')
+                supreFile.write('number_of_wall_Props 10\n')
+                supreFile.write('deformable_create_mesh deformable_wall.ebc\n')
+                supreFile.write('deformable_write_feap inputdataformatlab.dat\n')
+                supreFile.write('deformable_pressure {0}\n'.format(initialPressure))
+                supreFile.write('deformable_Evw {0}\n'.format(bc.getProperties()["Young's modulus"]))
+                supreFile.write('deformable_nuvw {0}\n'.format(bc.getProperties()["Poisson ratio"]))
+                supreFile.write('deformable_thickness {0}\n'.format(bc.getProperties()["Thickness"]))
+                supreFile.write('deformable_kcons {0}\n'.format(shearConstant))
+                supreFile.write('deformable_solve\n\n')
+
+                deformableGroup = solverInpData['DEFORMABLE WALL PARAMETERS']
+                deformableGroup['Deformable Wall'] = True
+                deformableGroup['Density of Vessel Wall'] = bc.getProperties()["Density"]
+                deformableGroup['Thickness of Vessel Wall'] = bc.getProperties()["Thickness"]
+                deformableGroup['Young Mod of Vessel Wall'] = bc.getProperties()["Young's modulus"]
+                deformableGroup['Poisson Ratio of Vessel Wall'] = bc.getProperties()["Poisson ratio"]
+                deformableGroup['Shear Constant of Vessel Wall'] = shearConstant
+                deformableGroup['Number of Wall Properties per Node'] = 10
+
+                deformableGroup['Use SWB File'] = False
+                deformableGroup['Use TWB File'] = False
+                deformableGroup['Use EWB File'] = False
+                deformableGroup['Wall External Support Term'] = bc.getProperties()["Enable tissue support term"]
+                deformableGroup['Stiffness Coefficient for Tissue Support'] = \
+                    bc.getProperties()["Stiffness coefficient"]
+                deformableGroup['Wall Damping Term'] = bc.getProperties()["Enable damping term"]
+                deformableGroup['Damping Coefficient for Tissue Support'] = bc.getProperties()["Damping coefficient"]
+                deformableGroup['Wall State Filter Term'] = False
+                deformableGroup['Wall State Filter Coefficient'] = 0
 
         # Finalize
         if not rcrInfo.first:
