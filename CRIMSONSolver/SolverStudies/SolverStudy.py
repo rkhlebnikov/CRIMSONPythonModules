@@ -423,7 +423,7 @@ class SolverStudy(object):
             elif is_boundary_condition_type(bc, DeformableWall.DeformableWall):
                 if initialPressure is None:
                     raise RuntimeError('Deformable wall boundary condition requires initial pressure to be defined.\n'
-                                       'Please add the InitialPressure condition to the boundary condition set.')
+                                       'Please add the "Initial pressure" condition to the boundary condition set.')
 
                 # Write the ebc for deformable wall
                 self._writeEbc(meshData, validFaceIdentifiers(bc),
