@@ -300,7 +300,7 @@ class SolverStudy(object):
         for bcType, bcs in bcByType.iteritems():
             if bcs[0].unique and len(bcs) > 1:
                 Utils.logError(
-                    'Multiple instances of foundary condition {0} are not allowed in a single study'.format(bcType))
+                    'Multiple instances of boundary condition {0} are not allowed in a single study'.format(bcType))
                 hadError = True
 
         return not hadError
