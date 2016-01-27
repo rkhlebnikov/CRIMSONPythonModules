@@ -333,7 +333,7 @@ class SolverStudy(object):
 
         is_boundary_condition_type = lambda bc, bcclass: bc.__class__.__name__ == bcclass.__name__
 
-        initialPressure = 13332
+        initialPressure = None
 
         # Processing priority for a particular BC type defines the order of processing the BCs
         # Default value is assumed to be 1. The higher the priority, the later the BC is processed
@@ -421,6 +421,10 @@ class SolverStudy(object):
                                              [waveform[-1, 0], steadyWaveformValue]]))
 
             elif is_boundary_condition_type(bc, DeformableWall.DeformableWall):
+                if initialPressure is None:
+                    raise RuntimeError('Deformable wall boundary condition requires initial pressure to be defined.\n'
+                                       'Please add the InitialPressure condition to the boundary condition set.')
+
                 # Write the ebc for deformable wall
                 self._writeEbc(meshData, validFaceIdentifiers(bc),
                                fileList[os.path.join('presolver', 'deformable_wall.ebc')])
