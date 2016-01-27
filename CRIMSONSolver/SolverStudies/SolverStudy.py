@@ -182,10 +182,10 @@ class SolverStudy(object):
 
         supreDir, supreFileName = os.path.split(supreFile)
         p = subprocess.Popen([presolverExecutable, supreFileName], cwd=supreDir,
-                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                             stderr=subprocess.STDOUT)# stdout=subprocess.PIPE,
 
         out, _ = p.communicate()
-        self._logPresolverOutput(out)
+        #self._logPresolverOutput(out)
 
         if p.returncode != 0:
             Utils.logError("Presolver run has failed.")

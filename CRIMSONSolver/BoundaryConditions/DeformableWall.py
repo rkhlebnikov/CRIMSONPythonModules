@@ -64,19 +64,19 @@ class DeformableWall(BoundaryCondition):
                             },
                         ]
                     },
-                    {
-                        "name": "State filtering properties",
-                        "value": [
-                            {
-                                "name": "Enable state filter term",
-                                "value": False,
-                            },
-                            {
-                                "name": "State filter coefficient",
-                                "value": 0.0,
-                            },
-                        ]
-                    },
+                    #{
+                    #    "name": "State filtering properties",
+                    #    "value": [
+                    #        {
+                    #            "name": "Enable state filter term",
+                    #            "value": False,
+                    #        },
+                    #        {
+                    #            "name": "State filter coefficient",
+                    #            "value": 0.0,
+                    #        },
+                    #    ]
+                    #},
                 ]
             },
         ]
