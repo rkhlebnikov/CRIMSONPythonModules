@@ -49,8 +49,6 @@ class SolverInpData():
         cardiovascularModelingGroup['Residual Criteria'] = props['Residual criteria']
         cardiovascularModelingGroup['Minimum Required Iterations'] = props['Minimum required iterations']
 
-        cardiovascularModelingGroup['Deformable Wall'] = False
-
         cardiovascularModelingGroup['Number of Coupled Surfaces'] = len(coupledSurfaceIds)
 
         cardiovascularModelingGroup['Pressure Coupling'] = CouplingType.enumNames[props['Pressure coupling']]
