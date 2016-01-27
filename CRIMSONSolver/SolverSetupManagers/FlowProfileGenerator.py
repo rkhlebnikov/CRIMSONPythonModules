@@ -38,7 +38,7 @@ class FlowProfileGenerator(object):
             crossProduct = numpy.cross(positions[1] - positions[0], positions[2] - positions[0])
             area = numpy.linalg.norm(crossProduct) / 2.0
 
-            return area * reduce(lambda x, y: x + y, (profileValues[i] for i in indices)) / 3.0
+            return area * reduce(lambda x, y: x + y, (profileValues.get(i, 0) for i in indices)) / 3.0
 
         totalVolume = reduce(lambda x, y: x + y,
                              (computeSubvolume(faceInfo[2:]) for faceInfo in
