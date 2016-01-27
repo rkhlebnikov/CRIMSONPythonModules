@@ -14,7 +14,7 @@ class DeformableWall(BoundaryCondition):
                 "value": [
                     {
                         "name": "Density",
-                        "value": 1.0,
+                        "value": 0.001,
                         "attributes": {"suffix": u" g/mm\u00B3", "minimum": 0.0}
                     },
                     {
