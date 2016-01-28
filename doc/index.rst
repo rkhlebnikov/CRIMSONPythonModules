@@ -13,7 +13,8 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
-   
+
+   GettingStarted
    concepts
    API
 
