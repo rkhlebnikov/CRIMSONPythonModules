@@ -17,7 +17,7 @@ from CRIMSONSolver.SolverStudies.FileList import FileList
 from CRIMSONSolver.SolverStudies.SolverInpData import SolverInpData
 from CRIMSONSolver.SolverStudies.Timer import Timer
 from CRIMSONSolver.BoundaryConditions import NoSlip, InitialPressure, RCR, ZeroPressure, PrescribedVelocities, \
-    DeformableWall
+    DeformableWall, Material
 
 
 class SolverStudy(object):
@@ -97,7 +97,7 @@ class SolverStudy(object):
             os.makedirs(presolverDir)
 
         fileList = FileList(outputDir)
-
+        
         try:
             faceIndicesAndFileNames = self._computeFaceIndicesAndFileNames(solidModelData, vesselPathNames)
             solverInpData = SolverInpData(solverSetup, faceIndicesAndFileNames)
@@ -116,7 +116,7 @@ class SolverStudy(object):
             with Timer('Written adjacency'):
                 self._writeAdjacency(meshData, fileList)
             with Timer('Written boundary conditions'):
-                self._writeBoundaryConditions(solidModelData, meshData, boundaryConditions, faceIndicesAndFileNames,
+                self._writeBoundaryConditions(vesselForestData, solidModelData, meshData, boundaryConditions, faceIndicesAndFileNames,
                                               solverInpData, fileList)
 
             self._writeSolverSetup(solverInpData, fileList)
@@ -304,8 +304,22 @@ class SolverStudy(object):
                 hadError = True
 
         return not hadError
+        
+    def _getFaceElementMap(self, solidModelData, meshData):
+        elementMap = {}
+    
+        allFaceIdentifiers = [solidModelData.getFaceIdentifier(i) for i in
+                              xrange(solidModelData.getNumberOfFaceIdentifiers())]
+                   
+        index = 0
+        for faceIdentifier in allFaceIdentifiers:
+            for info in meshData.getMeshFaceInfoForFace(faceIdentifier):
+                elementMap[info[1]] = index
+                index += 1
+        
+        return elementMap
 
-    def _writeBoundaryConditions(self, solidModelData, meshData, boundaryConditions, faceIndicesAndFileNames,
+    def _writeBoundaryConditions(self, vesselForestData, solidModelData, meshData, boundaryConditions, faceIndicesAndFileNames,
                                  solverInpData, fileList):
         if not self._validateBoundaryConditions(boundaryConditions):
             raise RuntimeError('Invalid boundary conditions. Aborting.')
@@ -335,9 +349,14 @@ class SolverStudy(object):
 
         initialPressure = None
 
+        elementMap = self._getFaceElementMap(solidModelData, meshData)
+        
+        materials = numpy.zeros((Material.MaterialType.count, len(elementMap)))
+        
         # Processing priority for a particular BC type defines the order of processing the BCs
         # Default value is assumed to be 1. The higher the priority, the later the BC is processed
-        bcProcessingPriorities = {DeformableWall.DeformableWall.__name__: 2}
+        bcProcessingPriorities = {Material.Material.__name__: 0, DeformableWall.DeformableWall.__name__: 2}
+
         bcCompare = lambda l, r: \
             cmp([bcProcessingPriorities.get(l.__class__.__name__, 1), l.__class__.__name__],
                 [bcProcessingPriorities.get(r.__class__.__name__, 1), r.__class__.__name__])
@@ -462,6 +481,11 @@ class SolverStudy(object):
                 deformableGroup['Damping Coefficient for Tissue Support'] = bc.getProperties()["Damping coefficient"]
                 deformableGroup['Wall State Filter Term'] = False
                 deformableGroup['Wall State Filter Coefficient'] = 0
+
+            elif is_boundary_condition_type(bc, Material.Material):
+                bc.computeMaterialValues(materials, vesselForestData, solidModelData, meshData, elementMap)
+                
+        print(materials)
 
         # Finalize
         if not rcrInfo.first:

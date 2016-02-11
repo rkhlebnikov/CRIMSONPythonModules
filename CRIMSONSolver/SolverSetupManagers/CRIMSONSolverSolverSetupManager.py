@@ -1,5 +1,5 @@
 from CRIMSONSolver.BoundaryConditionSets.BoundaryConditionSet import BoundaryConditionSet
-from CRIMSONSolver.BoundaryConditions import InitialPressure, NoSlip, PrescribedVelocities, RCR, ZeroPressure, DeformableWall
+from CRIMSONSolver.BoundaryConditions import InitialPressure, NoSlip, PrescribedVelocities, RCR, ZeroPressure, DeformableWall, Material
 from CRIMSONSolver.SolverSetups.SolverSetup3D import SolverSetup3D
 from CRIMSONSolver.SolverStudies.SolverStudy import SolverStudy
 
@@ -16,7 +16,8 @@ class CRIMSONSolverSolverSetupManager(object):
                                          "Prescribed velocities": PrescribedVelocities.PrescribedVelocities,
                                          "RCR": RCR.RCR,
                                          "Zero pressure": ZeroPressure.ZeroPressure,
-                                         "Deformable wall": DeformableWall.DeformableWall
+                                         "Deformable wall": DeformableWall.DeformableWall,
+                                         "Material": Material.Material
                                          }
 
     # Boundary condition sets
