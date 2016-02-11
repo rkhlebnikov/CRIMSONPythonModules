@@ -11,8 +11,7 @@ class InitialPressure(BoundaryCondition):
         BoundaryCondition.__init__(self)
         self.properties = [
             {
-                "name": "Initial pressure",
-                "value": 13332.0,
+                "Initial pressure": 13332.0,
                 "attributes": {"minimum": 0.0, "suffix": u" g/(mm\u00B7s\u00B2)"}
             },
         ]

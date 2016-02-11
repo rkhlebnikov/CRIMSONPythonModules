@@ -8,24 +8,27 @@ from CRIMSONCore.PropertyStorage import PropertyStorage
 
 
 class TestPropertyStorage(unittest.TestCase):
-    @classmethod
-    def setUp(cls):
-        cls.storage = PropertyStorage()
-        cls.storage.properties = [
+    def testAccessOld(self):
+        storage = PropertyStorage()
+        storage.properties = [
             {"name": 'a',
              "value": [
                  {"name": 'b',
                   "value": 1}
                 ]
              }]
+        self.checkAccess(storage)
 
-    @classmethod
-    def tearDown(cls):
-        del(cls.storage)
+    def testAccessNew(self):
+        storage = PropertyStorage()
+        storage.properties = [
+            {'a': [
+                 {'b': 1}
+                ]
+             }]
+        self.checkAccess(storage)
 
-    def testAccess(self):
-        storage = TestPropertyStorage.storage
-
+    def checkAccess(self, storage):
         self.assertEqual(storage.getProperties()['b'], 1)
         self.assertEqual(storage.getProperties()['a']['b'], 1)
 

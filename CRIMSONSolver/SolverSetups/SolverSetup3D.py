@@ -13,89 +13,75 @@ class SolverSetup3D(PropertyStorage):
         PropertyStorage.__init__(self)
         self.properties = [
             {
-                "name": "Time parameters",
-                "value": [
+                "Time parameters":
+                 [
                     {
-                        "name": "Number of time steps",
-                        "value": 200,
+                        "Number of time steps": 200,
                         "attributes": {"minimum": 1}
                     },
                     {
-                        "name": "Time step size",
-                        "value": 0.01,
+                        "Time step size": 0.01,
                         "attributes": {"minimum": 0.0, "suffix": " s"}
                     }
-                ]
+                 ]
             },
             {
-                "name": "Fluid parameters",
-                "value": [
+                "Fluid parameters":
+                [
                     {
-                        "name": "Viscosity",
-                        "value": 0.004,
+                        "Viscosity": 0.004,
                         "attributes": {"minimum": 0.0, "suffix": u" g/(mm\u00B7s)"}
                     },
                     {
-                        "name": "Density",
-                        "value": 0.00106,
+                        "Density": 0.00106,
                         "attributes": {"minimum": 0.0, "suffix": u" g/mm\u00B3"}
                     }
                 ]
             },
             {
-                "name": "Simulation parameters",
-                "value": [
+                "Simulation parameters":
+                [
                     {
-                        "name": "Solver type",
-                        "value": SolverType.memLS,
+                        "Solver type": SolverType.memLS,
                         "attributes": {"enumNames": SolverType.enumNames}
                     },
                     {
-                        "name": "Number of time steps between restarts",
-                        "value": 5,
+                        "Number of time steps between restarts": 5,
                         "attributes": {"minimum": 1}
                     },
                     {
-                        "name": "Residual control",
-                        "value": True,
+                        "Residual control": True,
                     },
                     {
-                        "name": "Residual criteria",
-                        "value": 0.001,
+                        "Residual criteria": 0.001,
                         "attributes": {"minimum": 0.0}
                     },
                     {
-                        "name": "Minimum required iterations",
-                        "value": 2,
+                        "Minimum required iterations": 2,
                         "attributes": {"minimum": 1}
                     },
                     {
-                        "name": "Step construction",
-                        "value": 5,
+                        "Step construction": 5,
                         "attributes": {"minimum": 1}
                     },
                     {
-                        "name": "Pressure coupling",
-                        "value": CouplingType.Implicit,
+                        "Pressure coupling": CouplingType.Implicit,
                         "attributes": {"enumNames": CouplingType.enumNames}
                     },
                     {
-                        "name": "Influx coefficient",
-                        "value": 0.5,
+                        "Influx coefficient": 0.5,
                         "attributes": {"minimum": 0.01, "maximum": 1.0}
                     },
                 ]
             },
             {
-                "name": "Output parameters",
-                "value": [
+                "Output parameters":
+                [
                     {
-                        "name": "Output wall shear stress",
-                        "value": True,
+                        "Output wall shear stress": True
                     },
                     {
-                        "name": "Output error indicator",
-                        "value": True,
+                        "Output error indicator": True
                     }
                 ]
             },

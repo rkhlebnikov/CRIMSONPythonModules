@@ -10,70 +10,58 @@ class DeformableWall(BoundaryCondition):
         BoundaryCondition.__init__(self)
         self.properties = [
             {
-                "name": "Vessel wall properties",
-                "value": [
+                "Vessel wall properties":
+                [
                     {
-                        "name": "Density",
-                        "value": 0.001,
+                        "Density": 0.001,
                         "attributes": {"suffix": u" g/mm\u00B3", "minimum": 0.0}
                     },
                     {
-                        "name": "Thickness",
-                        "value": 1.0,
+                        "Thickness": 1.0,
                         "attributes": {"suffix": u" mm", "minimum": 0.0}
                     },
                     {
-                        "name": "Young's modulus",
-                        "value": 4661000.0,
+                        "Young's modulus": 4661000.0,
                         "attributes": {"suffix": u" g/(mm\u00B7s\u00B2)", "minimum": 0.0}
                     },
                     {
-                        "name": "Poisson ratio",
-                        "value": 0.5,
+                        "Poisson ratio": 0.5,
                         "attributes": {"minimum": -1.0, "maximum": 0.5}
                     },
                     # Shear constant, unitless, never changes as per CAFA thesis p. 79
                     #{
-                    #    "name": "Shear constant",
-                    #    "value": 0.833333,
+                    #    "Shear constant": 0.833333,
                     #    "attributes": {"suffix": u" g/(mm\u00B7s\u00B2)", "minimum": 0.0}
                     #},
                 ]
             },
             {
-                "name": "Tissue support properties",
-                "value": [
+                "Tissue support properties":
+                [
                     {
-                        "name": "Enable tissue support term",
-                        "value": True,
+                        "Enable tissue support term": True,
                     },
                     {
-                        "name": "Stiffness coefficient",
-                        "value": 40.0,
+                        "Stiffness coefficient": 40.0,
                     },
                     {
-                        "name": "Damping properties",
-                        "value": [
+                        "Damping properties":
+                        [
                             {
-                                "name": "Enable damping term",
-                                "value": True,
+                                "Enable damping term": True,
                             },
                             {
-                                "name": "Damping coefficient",
-                                "value": 100.0,
+                                "Damping coefficient": 100.0,
                             },
                         ]
                     },
                     #{
-                    #    "name": "State filtering properties",
-                    #    "value": [
+                    #    "State filtering properties": [
                     #        {
-                    #            "name": "Enable state filter term",
-                    #            "value": False,
+                    #            "Enable state filter term": False,
                     #        },
                     #        {
-                    #            "name": "State filter coefficient",
-                    #            "value": 0.0,
+                    #            "State filter coefficient": 0.0,
                     #        },
                     #    ]
                     #},

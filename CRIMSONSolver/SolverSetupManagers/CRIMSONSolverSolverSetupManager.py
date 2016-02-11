@@ -1,5 +1,6 @@
 from CRIMSONSolver.BoundaryConditionSets.BoundaryConditionSet import BoundaryConditionSet
-from CRIMSONSolver.BoundaryConditions import InitialPressure, NoSlip, PrescribedVelocities, RCR, ZeroPressure, DeformableWall, Material
+from CRIMSONSolver.BoundaryConditions import InitialPressure, NoSlip, PrescribedVelocities, RCR, ZeroPressure, \
+    DeformableWall
 from CRIMSONSolver.SolverSetups.SolverSetup3D import SolverSetup3D
 from CRIMSONSolver.SolverStudies.SolverStudy import SolverStudy
 
@@ -17,7 +18,6 @@ class CRIMSONSolverSolverSetupManager(object):
                                          "RCR": RCR.RCR,
                                          "Zero pressure": ZeroPressure.ZeroPressure,
                                          "Deformable wall": DeformableWall.DeformableWall,
-                                         "Material": Material.Material
                                          }
 
     # Boundary condition sets
@@ -47,3 +47,14 @@ class CRIMSONSolverSolverSetupManager(object):
 
     def createSolverStudyData(self, name):
         return self.solverStudyClasses[name]()
+
+    # Material information
+    def getMaterialInformation(self):
+        return [{"Stiffness": 1.0},
+                {"Thickness": 1.0, "attributes": {"suffix": " mm"}},
+                {"MultiComponent": [
+                        {"A11": 0.0},
+                        {"A21": 1.0},
+                        {"A22": 0.0}
+                    ]}
+                ]

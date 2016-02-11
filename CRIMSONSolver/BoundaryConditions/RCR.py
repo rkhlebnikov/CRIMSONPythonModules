@@ -12,18 +12,15 @@ class RCR(BoundaryCondition):
         capacitancePropertyAttributes = {"suffix": u" mm\u2074\u00B7s\u00B2/g", "minimum": 0.0}
         self.properties = [
             {
-                "name": "Proximal resistance",
-                "value": 100.0,
+                "Proximal resistance": 100.0,
                 "attributes": resistancePropertyAttributes
             },
             {
-                "name": "Capacitance",
-                "value": 1e-5,
+                "Capacitance": 1e-5,
                 "attributes": capacitancePropertyAttributes
             },
             {
-                "name": "Distal resistance",
-                "value": 1000.0,
+                "Distal resistance": 1000.0,
                 "attributes": resistancePropertyAttributes
             }
         ]

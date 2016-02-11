@@ -3,41 +3,52 @@ class PropertyAccessor(object):
         self.propertyList = propertyList
 
     @staticmethod
+    def getNameAndValueKey(property):
+        if "name" in property: # Support for old property definition syntax, i.e. {"name": "Pressure", "value": 100.0}
+            return (property["name"], "value")
+        for key in property: # Support for new property definition syntax, i.e. {"Pressure": 100.0}
+            if key != "attributes":
+                return (key, key)
+
+    @staticmethod
     def findItemIndex(propertyList, itemName):
         for i, property in enumerate(propertyList):
-            if property["name"].lower() == itemName.lower():
-                return (propertyList, i)
-            if isinstance(property["value"], list):
-                result = PropertyAccessor.findItemIndex(property["value"], itemName)
+            propertyName, propertyValueKey = PropertyAccessor.getNameAndValueKey(property)
+            if propertyName == itemName:
+                return (propertyList, i, propertyValueKey)
+            if isinstance(property[propertyValueKey], list):
+                result = PropertyAccessor.findItemIndex(property[propertyValueKey], itemName)
                 if result is not None:
                     return result
 
     def __getitem__(self, itemName):
-        propertyListAndIndex = PropertyAccessor.findItemIndex(self.propertyList, itemName)
-        if propertyListAndIndex is None:
+        propertyListAndIndexAndValueKey = PropertyAccessor.findItemIndex(self.propertyList, itemName)
+        if propertyListAndIndexAndValueKey is None:
             raise KeyError("Item with name '" + itemName + "' not found")
 
-        value = propertyListAndIndex[0][propertyListAndIndex[1]]["value"]
+        propertyList, index, valueKey = propertyListAndIndexAndValueKey
+        value = propertyList[index][valueKey]
         if isinstance(value, list):
             return PropertyAccessor(value)
         return value
 
 
     def __setitem__(self, itemName, value):
-        propertyListAndIndex = PropertyAccessor.findItemIndex(self.propertyList, itemName)
-        if propertyListAndIndex is None:
+        propertyListAndIndexAndValueKey = PropertyAccessor.findItemIndex(self.propertyList, itemName)
+        if propertyListAndIndexAndValueKey is None:
             raise KeyError("Item with name '" + itemName + "' not found")
 
-        propertyList, index = propertyListAndIndex
+        propertyList, index, valueKey = propertyListAndIndexAndValueKey
+        propertyValue = propertyList[index][valueKey]
 
-        if isinstance(propertyList[index]["value"], list):
+        if isinstance(propertyValue, list):
             raise TypeError("It is forbidden to modify the property lists")
 
-        if type(propertyList[index]["value"]) != type(value):
+        if type(propertyValue) != type(value):
             raise TypeError("It is forbidden to change the type of properties. Expected " + type(
-                propertyList[index]["value"]).__name__ + ", received " + type(value).__name__)
+                propertyValue).__name__ + ", received " + type(value).__name__)
 
-        propertyList[index]["value"] = value
+        propertyList[index][valueKey] = value
 
 
 class PropertyStorage(object):

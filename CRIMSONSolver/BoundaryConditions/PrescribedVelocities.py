@@ -19,19 +19,16 @@ class PrescribedVelocities(BoundaryCondition):
         BoundaryCondition.__init__(self)
         self.properties = [
             {
-                "name": "Profile type",
-                "value": ProfileType.Parabolic,
+                "Profile type": ProfileType.Parabolic,
                 "attributes": {"enumNames": ProfileType.enumNames}
             },
             {
-                "name": "Output parameters",
-                "value": [
+                "Output parameters":
+                [
                     {
-                        "name": "Number of periods",
-                        "value": 1,
+                        "Number of periods": 1,
                         "attributes": {"minimum": 1}
                     }
-
                 ],
             },
         ]
