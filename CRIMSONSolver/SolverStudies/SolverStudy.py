@@ -17,7 +17,7 @@ from CRIMSONSolver.SolverStudies.FileList import FileList
 from CRIMSONSolver.SolverStudies.SolverInpData import SolverInpData
 from CRIMSONSolver.SolverStudies.Timer import Timer
 from CRIMSONSolver.BoundaryConditions import NoSlip, InitialPressure, RCR, ZeroPressure, PrescribedVelocities, \
-    DeformableWall, Material
+    DeformableWall
 
 
 class SolverStudy(object):
@@ -351,11 +351,13 @@ class SolverStudy(object):
 
         elementMap = self._getFaceElementMap(solidModelData, meshData)
         
-        materials = numpy.zeros((Material.MaterialType.count, len(elementMap)))
+        #materials = numpy.zeros((Material.MaterialType.count, len(elementMap)))
         
         # Processing priority for a particular BC type defines the order of processing the BCs
         # Default value is assumed to be 1. The higher the priority, the later the BC is processed
-        bcProcessingPriorities = {Material.Material.__name__: 0, DeformableWall.DeformableWall.__name__: 2}
+        bcProcessingPriorities = {
+            #Material.Material.__name__: 0,
+            DeformableWall.DeformableWall.__name__: 2}
 
         bcCompare = lambda l, r: \
             cmp([bcProcessingPriorities.get(l.__class__.__name__, 1), l.__class__.__name__],
@@ -482,10 +484,10 @@ class SolverStudy(object):
                 deformableGroup['Wall State Filter Term'] = False
                 deformableGroup['Wall State Filter Coefficient'] = 0
 
-            elif is_boundary_condition_type(bc, Material.Material):
-                bc.computeMaterialValues(materials, vesselForestData, solidModelData, meshData, elementMap)
+            #elif is_boundary_condition_type(bc, Material.Material):
+            #    bc.computeMaterialValues(materials, vesselForestData, solidModelData, meshData, elementMap)
                 
-        print(materials)
+        #print(materials)
 
         # Finalize
         if not rcrInfo.first:

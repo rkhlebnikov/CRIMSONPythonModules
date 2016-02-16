@@ -3,6 +3,7 @@ from CRIMSONSolver.BoundaryConditions import InitialPressure, NoSlip, Prescribed
     DeformableWall
 from CRIMSONSolver.SolverSetups.SolverSetup3D import SolverSetup3D
 from CRIMSONSolver.SolverStudies.SolverStudy import SolverStudy
+from CRIMSONSolver.Materials import DeformableWallMaterial
 
 
 class CRIMSONSolverSolverSetupManager(object):
@@ -19,6 +20,7 @@ class CRIMSONSolverSolverSetupManager(object):
                                          "Zero pressure": ZeroPressure.ZeroPressure,
                                          "Deformable wall": DeformableWall.DeformableWall,
                                          }
+        self.materialClasses = {"Deformable wall material": DeformableWallMaterial.DeformableWallMaterial}
 
     # Boundary condition sets
     def getBoundaryConditionSetNames(self):
@@ -33,6 +35,13 @@ class CRIMSONSolverSolverSetupManager(object):
 
     def createBoundaryCondition(self, name, ownerBCSet):
         return self.boundaryConditionClasses[name]()
+
+    # Materials
+    def getMaterialNames(self):
+        return self.materialClasses.keys()
+
+    def createMaterial(self, name):
+        return self.materialClasses[name]()
 
     # Solver setups
     def getSolverSetupNames(self):
