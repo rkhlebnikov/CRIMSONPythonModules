@@ -58,7 +58,7 @@
    <item>
     <widget class="QStackedWidget" name="stackedWidget">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="page_2">
       <layout class="QVBoxLayout" name="verticalLayout">
@@ -158,15 +158,14 @@
      <widget class="QWidget" name="page_3">
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
-        <widget class="QPlainTextEdit" name="scriptTextEdit">
+        <widget class="QTextEdit" name="scriptTextEdit">
          <property name="font">
           <font>
            <family>Courier New</family>
           </font>
          </property>
-         <property name="plainText">
-          <string>def compute():
-     pass</string>
+         <property name="tabStopWidth">
+          <number>20</number>
          </property>
         </widget>
        </item>

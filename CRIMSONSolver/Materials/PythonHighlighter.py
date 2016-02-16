@@ -23,14 +23,14 @@ def format(color, style=''):
 
 # Syntax styles that can be shared by all languages
 STYLES = {
-    'keyword': format('blue'),
-    'operator': format('red'),
-    'brace': format('darkGray'),
-    'defclass': format('black', 'bold'),
+    'keyword': format('blueViolet'),
+    'operator': format('mediumSlateBlue'),
+    'brace': format('gray'),
+    'defclass': format('crimson', 'bold'),
     'string': format('magenta'),
     'string2': format('darkMagenta'),
     'comment': format('darkGreen', 'italic'),
-    'self': format('black', 'italic'),
+    'self': format('darkOliveGreen', 'italic'),
     'numbers': format('brown'),
 }
 
@@ -40,7 +40,7 @@ class PythonHighlighter (QSyntaxHighlighter):
     """
     # Python keywords
     keywords = [
-        'and', 'assert', 'break', 'class', 'continue', 'def',
+        'and', 'as', 'assert', 'break', 'class', 'continue', 'def',
         'del', 'elif', 'else', 'except', 'exec', 'finally',
         'for', 'from', 'global', 'if', 'import', 'in',
         'is', 'lambda', 'not', 'or', 'pass', 'print',
@@ -123,7 +123,7 @@ class PythonHighlighter (QSyntaxHighlighter):
             while index >= 0:
                 # We actually want the index of the nth match
                 index = expression.pos(nth)
-                length = expression.cap(nth).length()
+                length = len(expression.cap(nth))
                 self.setFormat(index, length, format)
                 index = expression.indexIn(text, index + length)
 

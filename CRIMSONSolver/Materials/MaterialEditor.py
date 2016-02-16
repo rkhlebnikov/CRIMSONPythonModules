@@ -35,7 +35,7 @@ else:
             self.ui = QtUiTools.QUiLoader().load(QtCore.QFile(str(uiFileName)))
 
             scriptTextEditor = findChild(self.ui, "scriptTextEdit")
-            self.highlighter = PythonHighlighter.PythonHighlighter(scriptTextEditor.document())
+            self.highlighter = PythonHighlighter.PythonHighlighter(scriptTextEditor)
 
         def getEditorWidget(self):
             return self.ui
