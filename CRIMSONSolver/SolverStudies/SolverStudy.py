@@ -220,11 +220,13 @@ class SolverStudy(object):
         curIndex = 0
         outFileAdjacency.write('0\n')
         for i in xrange(meshData.getNElements()):
-            curIndex += len(meshData.getAdjacentElements(i))
+            elementIds = numpy.frombuffer(meshData.getAdjacentElements(i).data(), numpy.dtype(int))
+            curIndex += len(elementIds)
             outFileAdjacency.write('{0}\n'.format(curIndex))
 
         for i in xrange(meshData.getNElements()):
-            for adjacentId in meshData.getAdjacentElements(i):
+            elementIds = numpy.frombuffer(meshData.getAdjacentElements(i).data(), numpy.dtype(int))
+            for adjacentId in elementIds:
                 outFileAdjacency.write('{0}\n'.format(adjacentId))
 
         outFileAdjacency.seek(len(xadjString) + 1)  # +1 for potential \r
@@ -235,28 +237,30 @@ class SolverStudy(object):
 
         for i in xrange(meshData.getNElements()):
             # node and element indices are 1-based for presolver
+            nodeIds = numpy.frombuffer(meshData.getElementNodeIds(i).data(), numpy.dtype(int))
             outFileConnectivity.write(
-                '{0} {1[0]} {1[1]} {1[2]} {1[3]}\n'.format(i + 1, [x + 1 for x in meshData.getElementNodeIds(i)]))
+                '{0} {1[0]} {1[1]} {1[2]} {1[3]}\n'.format(i + 1, [x + 1 for x in nodeIds]))
 
     def _writeNodeCoordinates(self, meshData, fileList):
         outFileCoordinates = fileList[os.path.join('presolver', 'the.coordinates')]
 
         for i in xrange(meshData.getNNodes()):
             # node indices are 1-based for presolver
-            outFileCoordinates.write('{0} {1[0]} {1[1]} {1[2]}\n'.format(i + 1, meshData.getNodeCoordinates(i)))
+            coords = meshData.getNodeCoordinates(i)
+            outFileCoordinates.write('{0} {1} {2} {3}\n'.format(i + 1, coords.x(), coords.y(), coords.z()))
 
     def _writeNbc(self, meshData, faceIdentifiers, outputFile):
         nodeIndices = set()
 
         for faceIdentifier in faceIdentifiers:
-            nodeIndices.update(meshData.getNodeIdsForFace(faceIdentifier))
+            nodeIndices.update(numpy.frombuffer(meshData.getNodeIdsForFace(faceIdentifier).data(), numpy.dtype(int)))
 
         for i in sorted(nodeIndices):
             outputFile.write('{0}\n'.format(i + 1))  # Node indices are 1-based for presolver
 
     def _writeEbc(self, meshData, faceIdentifiers, outputFile):
         for faceIdentifier in faceIdentifiers:
-            for info in meshData.getMeshFaceInfoForFace(faceIdentifier):
+            for info in numpy.frombuffer(meshData.getMeshFaceInfoForFace(faceIdentifier).data(), numpy.dtype('5i')):
                 l = '{0}\n'.format(
                     ' '.join(str(x + 1) for x in info))  # element and node indices are 1-based for presolver
                 outputFile.write(l)
@@ -313,7 +317,7 @@ class SolverStudy(object):
                    
         index = 0
         for faceIdentifier in allFaceIdentifiers:
-            for info in meshData.getMeshFaceInfoForFace(faceIdentifier):
+            for info in numpy.frombuffer(meshData.getMeshFaceInfoForFace(faceIdentifier).data(), numpy.dtype('5i')):
                 elementMap[info[1]] = index
                 index += 1
         
@@ -429,7 +433,8 @@ class SolverStudy(object):
 
                         for pointIndex, flowVectorList in flowProfileGenerator.generateProfile(wave[:, 1]):
                             bctInfo.totalPoints += 1
-                            file.write('{0[0]} {0[1]} {0[2]} {1}\n'.format(meshData.getNodeCoordinates(pointIndex),
+                            coords = meshData.getNodeCoordinates(pointIndex)
+                            file.write('{0} {1} {2} {3}\n'.format(coords.x(), coords.y(), coords.z(),
                                                                            wave.shape[0]))
                             for timeStep, flowVector in enumerate(flowVectorList):
                                 file.write('{0[0]} {0[1]} {0[2]} {1}\n'.format(flowVector, wave[timeStep, 0]))

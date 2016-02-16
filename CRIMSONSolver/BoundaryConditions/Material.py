@@ -1,11 +1,13 @@
 from CRIMSONCore.BoundaryCondition import BoundaryCondition
 from PythonQt.CRIMSON import FaceType
 
+import numpy
+
 class MaterialType(object):
     enumNames = ["Stiffness", "Wall thickness"]
     Stiffness, WallThickness, count = range(3)
 
-class DeformableMaterial(BoundaryCondition):
+class Material(BoundaryCondition):
     unique = False
     humanReadableName = "Material"
     applicableFaceTypes = [FaceType.ftWall]
@@ -30,5 +32,5 @@ class DeformableMaterial(BoundaryCondition):
                           
         materialType = self.getProperties()["Material type"]
         for faceId in validFaceIdentifiers(self):
-            for info in meshData.getMeshFaceInfoForFace(faceId):
+            for info in numpy.frombuffer(meshData.getMeshFaceInfoForFace(faceId).data(), numpy.dtype('5i')):
                 output[materialType][elementMap[info[1]]] = self.getProperties()["value"]

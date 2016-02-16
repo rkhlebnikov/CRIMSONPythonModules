@@ -3,6 +3,8 @@ import math
 
 from CRIMSONSolver.BoundaryConditions.PrescribedVelocities import ProfileType
 
+from PythonQt.QtGui import QVector3D
+
 def plugProfileFunction(distance, maxDistance):
     return 0 if distance < 1e-6 else 1
 
@@ -21,10 +23,11 @@ class FlowProfileGenerator(object):
                         ProfileType.Womersley: womersleyProfileFunction}
 
     def __init__(self, profileType, solidModelData, meshData, faceIdentifier):
-        self.faceNormal = solidModelData.getFaceNormal(faceIdentifier)
+        faceNormal = solidModelData.getFaceNormal(faceIdentifier)
+        self.faceNormal = [faceNormal.x(), faceNormal.y(), faceNormal.z()]
         distanceMap = {pointIndex: solidModelData.getDistanceToFaceEdge(faceIdentifier,
-                                                                        *meshData.getNodeCoordinates(pointIndex))
-                       for pointIndex in meshData.getNodeIdsForFace(faceIdentifier)}
+                                                                        meshData.getNodeCoordinates(pointIndex))
+                       for pointIndex in numpy.frombuffer(meshData.getNodeIdsForFace(faceIdentifier).data(), numpy.dtype(int))}
 
         maxDistance = max(distanceMap.itervalues())
 
@@ -34,15 +37,15 @@ class FlowProfileGenerator(object):
 
         # Compute the volume of the flow profile prism based on a triangle defined by indices
         def computeSubvolume(indices):
-            positions = [numpy.array(meshData.getNodeCoordinates(x)) for x in indices]
-            crossProduct = numpy.cross(positions[1] - positions[0], positions[2] - positions[0])
-            area = numpy.linalg.norm(crossProduct) / 2.0
+            positions = [meshData.getNodeCoordinates(x) for x in indices]
+            crossProduct = QVector3D.crossProduct(positions[1] - positions[0], positions[2] - positions[0])
+            area = crossProduct.length() / 2.0
 
             return area * reduce(lambda x, y: x + y, (profileValues.get(i, 0) for i in indices)) / 3.0
 
         totalVolume = reduce(lambda x, y: x + y,
                              (computeSubvolume(faceInfo[2:]) for faceInfo in
-                              meshData.getMeshFaceInfoForFace(faceIdentifier)))
+                              numpy.frombuffer(meshData.getMeshFaceInfoForFace(faceIdentifier).data(), numpy.dtype('5i'))))
 
         self.normalizedProfileValues = {pointIndex: profileValue / totalVolume for
                                         pointIndex, profileValue in profileValues.iteritems()}
