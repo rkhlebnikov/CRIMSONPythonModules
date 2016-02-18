@@ -1,3 +1,5 @@
+from CRIMSONSolver.Materials.MaterialData import RepresentationType
+
 try:
     import os
     import math
@@ -17,14 +19,6 @@ except:
         pass
 
 else:
-    class RepresentationType(object):
-        Constant, Table, Script = range(3)
-
-
-    class InputVariableType(object):
-        DistanceAlongPath, LocalRadius, x, y, z = range(5)
-
-
     class SingleMaterialEditor(object):
         def __init__(self, materialData):
             self.materialData = materialData
@@ -32,13 +26,16 @@ else:
             uiPath =  os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui")
             uiFileName = os.path.join(uiPath, "SingleMaterialEditorWidget.ui")
 
-            self.ui = QtUiTools.QUiLoader().load(QtCore.QFile(str(uiFileName)))
+            l = QtUiTools.QUiLoader()
+            l.setWorkingDirectory(QtCore.QDir(uiPath))
+            self.ui = l.load(QtCore.QFile(str(uiFileName)))
 
             findChild = lambda name: self.ui.findChild(PythonQt.QtCore.QObject, name)
 
             self.scriptTextEditor = findChild("scriptTextEdit")
             self.highlighter = PythonHighlighter.PythonHighlighter(self.scriptTextEditor)
             self.scriptTextEditor.setText(materialData.scriptData)
+            self.scriptTextEditor.connect('textChanged()', self.saveScriptText)
 
             self.inputVariableComboBox = findChild("inputVariableComboBox")
             self.inputVariableComboBox.setCurrentIndex(self.materialData.tableData.inputVariableType)
@@ -52,32 +49,21 @@ else:
                 self.customMaterialFrame.hide()
             else:
                 self.overrideCheckBox.setChecked(True)
-                self.representationComboBox.setCurrentIndex(materialData.representation - 1)
+                self.representationComboBox.setCurrentIndex(materialData.representation)
+
+            self.overrideCheckBox.connect('toggled(bool)', self.enableRepresentationOverride)
+            self.representationComboBox.connect('currentIndexChanged(int)', self.setRepresentationByComboBoxIndex)
 
             self.materialNameLineEdit = findChild("materialNameLineEdit")
             self.materialNameLineEdit.setText(materialData.name)
 
             self.tableWidget = findChild("tableWidget")
 
-            addRowBeforeButton = findChild("addRowBeforeButton")
-            addRowBeforeButton.setIcon(QtGui.QIcon(os.path.join(uiPath, 'icons', 'before.png')))
-            addRowBeforeButton.connect('clicked(bool)', self.addRowBefore)
-
-            addRowAfterButton = findChild("addRowAfterButton")
-            addRowAfterButton.setIcon(QtGui.QIcon(os.path.join(uiPath, 'icons', 'after.png')))
-            addRowAfterButton.connect('clicked(bool)', self.addRowAfter)
-
-            removeRowsButton = findChild("removeRowsButton")
-            removeRowsButton.setIcon(QtGui.QIcon(os.path.join(uiPath, 'icons', 'delete.png')))
-            removeRowsButton.connect('clicked(bool)', self.removeRows)
-
-            loadTableButton = findChild("loadTableButton")
-            loadTableButton.setIcon(QtGui.QIcon(os.path.join(uiPath, 'icons', 'open.png')))
-            loadTableButton.connect('clicked(bool)', self.loadTableFromFile)
-
-            saveTableButton = findChild("saveTableButton")
-            saveTableButton.setIcon(QtGui.QIcon(os.path.join(uiPath, 'icons', 'save.png')))
-            saveTableButton.connect('clicked(bool)', self.saveTableToFile)
+            findChild("addRowBeforeButton").connect('clicked(bool)', self.addRowBefore)
+            findChild("addRowAfterButton").connect('clicked(bool)', self.addRowAfter)
+            findChild("removeRowsButton").connect('clicked(bool)', self.removeRows)
+            findChild("loadTableButton").connect('clicked(bool)', self.loadTableFromFile)
+            findChild("saveTableButton").connect('clicked(bool)', self.saveTableToFile)
 
             class DoubleValueDelegate(QtGui.QItemDelegate):
                 def createEditor(self, parent, option, index):
@@ -93,6 +79,19 @@ else:
             self.tableWidget.model().connect('dataChanged(QModelIndex, QModelIndex)', self.fillDataFromTable)
             self.tableWidget.model().connect('rowsRemoved(QModelIndex, int, int)', self.fillDataFromTable)
 
+        def enableRepresentationOverride(self, enable):
+            if enable:
+                self.materialData.representation = RepresentationType.Table
+                self.representationComboBox.setCurrentIndex(RepresentationType.Table)
+            else:
+                self.materialData.representation = RepresentationType.Constant
+
+        def setRepresentationByComboBoxIndex(self, index):
+            self.materialData.representation = index
+
+        ################################################################################
+        # Table handling
+        ################################################################################
         def fillTableFromData(self):
             self.fillingTable = True
             self.tableWidget.clear()
@@ -165,7 +164,6 @@ else:
 
             try:
                 data = numpy.loadtxt(fileName)
-                print
                 if len(data.shape) <= 1:
                     nCols = len(data.shape)
                 else:
@@ -195,31 +193,15 @@ else:
 
             numpy.savetxt(fileName, tableData, fmt='%g', delimiter='\t')
 
-    class TableData(object):
-        def __init__(self, data=numpy.zeros((2, 1)), inputVariableType=InputVariableType.DistanceAlongPath):
-            self.data = data
-            self.inputVariableType = inputVariableType
-
-    class MaterialData(object):
-        def __init__(self, name='', nComponents=1, componentNames=None, repr=RepresentationType.Constant,
-                     tableData = TableData(),
-                     scriptData=''):
-            self.name = name
-            self.nComponents = nComponents
-            self.componentNames = componentNames
-            self.representation = repr
-            self.tableData = tableData
-            self.scriptData = scriptData
-
+        ################################################################################
+        # Script handling
+        ################################################################################
+        def saveScriptText(self):
+            self.materialData.scriptData = self.scriptTextEditor.toPlainText()
 
     class MaterialEditor(object):
         def __init__(self, materials):
-            self.materials = [MaterialData('Stiffness', 1),
-                              MaterialData('Thickness', 3, ['T11', 'T12', 'T22'], RepresentationType.Table,
-                                           TableData(numpy.zeros((5, 4)), InputVariableType.LocalRadius),
-'''def compute():
-   pass
-''')]
+            self.materials = materials
             uiFileName = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                       "ui", "MaterialEditorWidget.ui")
 
