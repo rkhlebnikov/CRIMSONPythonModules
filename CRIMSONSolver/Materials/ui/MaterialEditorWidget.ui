@@ -41,33 +41,6 @@
    <property name="bottomMargin">
     <number>0</number>
    </property>
-   <item>
-    <widget class="QScrollArea" name="materialsScrollArea">
-     <property name="minimumSize">
-      <size>
-       <width>0</width>
-       <height>0</height>
-      </size>
-     </property>
-     <property name="widgetResizable">
-      <bool>true</bool>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-     </property>
-     <widget class="QWidget" name="materialsWidget">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>0</y>
-        <width>398</width>
-        <height>262</height>
-       </rect>
-      </property>
-      <layout class="QVBoxLayout" name="verticalLayout"/>
-     </widget>
-    </widget>
-   </item>
   </layout>
  </widget>
  <resources/>

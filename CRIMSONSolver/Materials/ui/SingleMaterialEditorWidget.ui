@@ -135,7 +135,7 @@
            <property name="minimumSize">
             <size>
              <width>0</width>
-             <height>200</height>
+             <height>300</height>
             </size>
            </property>
            <property name="frameShape">
@@ -145,29 +145,53 @@
             <number>0</number>
            </property>
            <widget class="QWidget" name="page_2">
-            <layout class="QVBoxLayout" name="verticalLayout">
-             <property name="leftMargin">
-              <number>2</number>
-             </property>
-             <property name="topMargin">
-              <number>2</number>
-             </property>
-             <property name="rightMargin">
-              <number>2</number>
-             </property>
-             <property name="bottomMargin">
-              <number>2</number>
-             </property>
+            <layout class="QVBoxLayout" name="verticalLayout_6">
              <item>
-              <layout class="QFormLayout" name="formLayout">
+              <layout class="QFormLayout" name="formLayout_2">
                <item row="0" column="0">
+                <widget class="QLabel" name="label_5">
+                 <property name="text">
+                  <string>Input variable</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="1">
+                <widget class="QComboBox" name="inputVariableComboBox">
+                 <item>
+                  <property name="text">
+                   <string>Position along vessel (d)</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Local radius (r)</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>x</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>y</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>z</string>
+                  </property>
+                 </item>
+                </widget>
+               </item>
+               <item row="1" column="0">
                 <widget class="QLabel" name="label_3">
                  <property name="text">
                   <string>Interpolation method</string>
                  </property>
                 </widget>
                </item>
-               <item row="0" column="1">
+               <item row="1" column="1">
                 <widget class="QComboBox" name="interpolationComboBox">
                  <item>
                   <property name="text">
@@ -186,14 +210,14 @@
                  </item>
                 </widget>
                </item>
-               <item row="1" column="0">
+               <item row="2" column="0">
                 <widget class="QLabel" name="label_4">
                  <property name="text">
                   <string>Extrapolation method</string>
                  </property>
                 </widget>
                </item>
-               <item row="1" column="1">
+               <item row="2" column="1">
                 <widget class="QComboBox" name="extrapolationComboBox">
                  <item>
                   <property name="text">
@@ -210,7 +234,134 @@
               </layout>
              </item>
              <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_3">
+               <item>
+                <widget class="QToolButton" name="addRowBeforeButton">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add row before current row&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                 <property name="text">
+                  <string>...</string>
+                 </property>
+                 <property name="icon">
+                  <iconset resource="MaterialEditorResources.qrc">
+                   <normaloff>:/icons/before.png</normaloff>:/icons/before.png</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>24</width>
+                   <height>24</height>
+                  </size>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QToolButton" name="addRowAfterButton">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add row after current row&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                 <property name="text">
+                  <string>...</string>
+                 </property>
+                 <property name="icon">
+                  <iconset resource="MaterialEditorResources.qrc">
+                   <normaloff>:/icons/after.png</normaloff>:/icons/after.png</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>24</width>
+                   <height>24</height>
+                  </size>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QToolButton" name="removeRowsButton">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Remove selected rows&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                 <property name="text">
+                  <string>...</string>
+                 </property>
+                 <property name="icon">
+                  <iconset resource="MaterialEditorResources.qrc">
+                   <normaloff>:/icons/delete.png</normaloff>:/icons/delete.png</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>24</width>
+                   <height>24</height>
+                  </size>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="Line" name="line">
+                 <property name="orientation">
+                  <enum>Qt::Vertical</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QToolButton" name="loadTableButton">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Load table data from file&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                 <property name="text">
+                  <string>...</string>
+                 </property>
+                 <property name="icon">
+                  <iconset resource="MaterialEditorResources.qrc">
+                   <normaloff>:/icons/open.png</normaloff>:/icons/open.png</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>24</width>
+                   <height>24</height>
+                  </size>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QToolButton" name="saveTableButton">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save data to file&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                 <property name="text">
+                  <string>...</string>
+                 </property>
+                 <property name="icon">
+                  <iconset resource="MaterialEditorResources.qrc">
+                   <normaloff>:/icons/save.png</normaloff>:/icons/save.png</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>24</width>
+                   <height>24</height>
+                  </size>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </item>
+             <item>
               <widget class="QTableWidget" name="tableWidget">
+               <property name="selectionBehavior">
+                <enum>QAbstractItemView::SelectRows</enum>
+               </property>
                <attribute name="horizontalHeaderStretchLastSection">
                 <bool>true</bool>
                </attribute>
@@ -232,21 +383,6 @@
                  <string>New Row</string>
                 </property>
                </row>
-               <column>
-                <property name="text">
-                 <string>A11</string>
-                </property>
-               </column>
-               <column>
-                <property name="text">
-                 <string>A12</string>
-                </property>
-               </column>
-               <column>
-                <property name="text">
-                 <string>A21</string>
-                </property>
-               </column>
               </widget>
              </item>
             </layout>
@@ -272,6 +408,9 @@
                  <family>Courier New</family>
                 </font>
                </property>
+               <property name="lineWrapMode">
+                <enum>QTextEdit::NoWrap</enum>
+               </property>
                <property name="tabStopWidth">
                 <number>20</number>
                </property>
@@ -295,7 +434,9 @@
   <zorder>frame</zorder>
   <zorder>scriptTextEdit</zorder>
  </widget>
- <resources/>
+ <resources>
+  <include location="MaterialEditorResources.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>representationComboBox</sender>

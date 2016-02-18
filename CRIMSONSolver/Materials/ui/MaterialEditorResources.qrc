@@ -1,0 +1,9 @@
+<RCC>
+  <qresource>
+    <file>icons/after.png</file>
+    <file>icons/before.png</file>
+    <file>icons/delete.png</file>
+    <file>icons/open.png</file>
+    <file>icons/save.png</file>
+  </qresource>
+</RCC>

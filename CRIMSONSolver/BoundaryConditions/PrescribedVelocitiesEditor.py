@@ -22,17 +22,6 @@ except:
 else:
     rc('font', **{'family': 'serif', 'serif': ['Palatino']})
 
-
-    def findChild(widget, name):
-        for w in widget.children():
-            if w.objectName == name:
-                return w
-        for w in widget.children():
-            result = findChild(w, name)
-            if result:
-                return result
-
-
     class PrescribedVelocitiesFigure(FigureCanvas):
         """Ultimately, this is a QWidget (as well as a FigureCanvasAgg, etc.)."""
 
@@ -130,19 +119,19 @@ else:
             self.ui = QtUiTools.QUiLoader().load(QtCore.QFile(str(uiFileName)))
 
             self.figure = PrescribedVelocitiesFigure()
-            plotLayout = findChild(self.ui, "plotLayout")
-            plotFrame = findChild(self.ui, "plotFrame")
+            plotLayout = self.ui.findChild(PythonQt.QtCore.QObject, "plotLayout")
+            plotFrame = self.ui.findChild(PythonQt.QtCore.QObject, "plotFrame")
             self.navigationToolbar = NavigationToolbar(self.figure, plotFrame)
             plotLayout.addWidget(self.navigationToolbar)
             plotLayout.addWidget(self.figure)
 
-            loadWaveformButton = findChild(self.ui, "loadWaveformButton")
+            loadWaveformButton = self.ui.findChild(PythonQt.QtCore.QObject, "loadWaveformButton")
             loadWaveformButton.connect('clicked(bool)', self.loadWaveform)
 
-            self.numberOfSamplesSpinBox = findChild(self.ui, "numberOfSamplesSpinBox")
+            self.numberOfSamplesSpinBox = self.ui.findChild(PythonQt.QtCore.QObject, "numberOfSamplesSpinBox")
             self.numberOfSamplesSpinBox.connect('valueChanged(int)', self._computeSmoothedWaveform)
 
-            self.smoothnessSlider = findChild(self.ui, "smoothnessSlider")
+            self.smoothnessSlider = self.ui.findChild(PythonQt.QtCore.QObject, "smoothnessSlider")
             self.smoothnessSlider.connect('valueChanged(int)', self._computeSmoothedWaveform)
 
             if self.prescribedVelocitiesBC.firstFilteredCoef < 0:
