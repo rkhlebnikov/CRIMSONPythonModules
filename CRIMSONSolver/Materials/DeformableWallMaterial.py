@@ -25,7 +25,7 @@ class DeformableWallMaterial(BoundaryCondition):
             }
         ]
 
-        self.materialData = []
+        self.materialDatas = []
         self.fillMaterialData()
         self.editor = None
 
@@ -43,12 +43,12 @@ class DeformableWallMaterial(BoundaryCondition):
 
             nComponents = max(1, nComponents)
 
-            self.materialData.append(MaterialData(name, nComponents, componentNames))
+            self.materialDatas.append(MaterialData(name, nComponents, componentNames))
 
 
     def createCustomEditorWidget(self):
         if not self.editor:
-            self.editor = MaterialEditor(self.materialData)
+            self.editor = MaterialEditor(self.materialDatas)
         return self.editor.getEditorWidget()
 
     def __getstate__(self):
@@ -60,11 +60,3 @@ class DeformableWallMaterial(BoundaryCondition):
         self.__dict__.update(dict)
         self.editor = None # Reload classes on un-pickling
 
-    def computeMaterialValues(self, output, vesselForestData, solidModelData, meshData, elementMap):
-        validFaceIdentifiers = lambda bc: (x for x in bc.faceIdentifiers if
-                                           solidModelData.faceIdentifierIndex(x) != -1)
-                          
-        materialType = self.getProperties()["Material type"]
-        for faceId in validFaceIdentifiers(self):
-            for info in meshData.getMeshFaceInfoForFace(faceId):
-                output[materialType][elementMap[info[1]]] = self.getProperties()["value"]

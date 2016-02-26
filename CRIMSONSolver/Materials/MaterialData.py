@@ -16,7 +16,7 @@ class TableData(object):
 class MaterialData(object):
     def __init__(self, name='', nComponents=1, componentNames=None, repr=RepresentationType.Constant,
                  tableData = None,
-                 scriptData=''):
+                 scriptData='def computeMaterialValue(d, r, x, y, z):\n\tpass'):
         self.name = name
         self.nComponents = nComponents
         self.componentNames = componentNames

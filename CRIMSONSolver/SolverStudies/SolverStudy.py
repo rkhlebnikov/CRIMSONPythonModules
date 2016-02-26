@@ -18,6 +18,7 @@ from CRIMSONSolver.SolverStudies.SolverInpData import SolverInpData
 from CRIMSONSolver.SolverStudies.Timer import Timer
 from CRIMSONSolver.BoundaryConditions import NoSlip, InitialPressure, RCR, ZeroPressure, PrescribedVelocities, \
     DeformableWall
+from CRIMSONSolver.Materials import MaterialData
 
 
 class SolverStudy(object):
@@ -25,6 +26,7 @@ class SolverStudy(object):
         self.meshNodeUID = ""
         self.solverSetupNodeUID = ""
         self.boundaryConditionSetNodeUIDs = []
+        self.materialNodeUIDs = []
 
     def getMeshNodeUID(self):
         return self.meshNodeUID
@@ -42,6 +44,12 @@ class SolverStudy(object):
         return self.boundaryConditionSetNodeUIDs
 
     def setBoundaryConditionSetNodeUIDs(self, uids):
+        self.boundaryConditionSetNodeUIDs = uids
+
+    def getMaterialNodeUIDs(self):
+        return self.boundaryConditionSetNodeUIDs
+
+    def setMaterialNodeUIDs(self, uids):
         self.boundaryConditionSetNodeUIDs = uids
 
     def loadSolution(self):
@@ -78,7 +86,9 @@ class SolverStudy(object):
         return solutions
 
     def writeSolverSetup(self, vesselForestData, solidModelData, meshData, solverSetup, boundaryConditions,
-                         vesselPathNames, solutionStorage):
+                         materials, vesselPathNames, solutionStorage):
+
+        print(len(materials))
 
         outputDir = QtGui.QFileDialog.getExistingDirectory(None, 'Select output folder')
 
@@ -559,3 +569,33 @@ class SolverStudy(object):
             faceIndicesAndFileNames[kv[0]][0] = i + 2  # 1 is reserved for all_exterior_faces
 
         return OrderedDict(sorted(faceIndicesAndFileNames.items(), key=lambda t: t[1][0]))
+
+    def _computeMaterials(self, materials, vesselForestData, solidModelData, meshData, elementMap):
+        # default value for material should come from BC?..  See comment below
+
+        validFaceIdentifiers = lambda bc: (x for x in bc.faceIdentifiers if
+                                           solidModelData.faceIdentifierIndex(x) != -1)
+
+        materialValues = {}
+        for m in materials:
+            for materialData in m.materialDatas:
+                if materialData.name not in materialValues:
+                    newMat = numpy.zeros((len(elementMap), materialData.nComponents))
+
+                    for component in xrange(materialData.nComponents):
+                        newMat[:, component] = m.getProperties()[materialData.name] # Here!
+
+                    materialValues[materialData.name] = newMat
+
+                if materialData.representation == MaterialData.RepresentationType.Script:
+                    exec materialData.scriptData in globals(), locals()
+                for faceId in validFaceIdentifiers(m):
+                    for info in meshData.getMeshFaceInfoForFace(faceId):
+                        if materialData.representation == MaterialData.RepresentationType.Constant:
+                            value = m.getProperties()[materialData.name]
+                        elif materialData.representation == MaterialData.RepresentationType.Table:
+                            value = -1 # Provide correct variable, then pass to interpolation, looks like need scipy
+                        elif materialData.representation == MaterialData.RepresentationType.Script:
+                            value = computeMaterialValue(0,0,0,0,0) # Provide correct values
+
+                        materialValues[materialData.name][elementMap[info[1]]] = value
