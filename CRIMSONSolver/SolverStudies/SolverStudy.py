@@ -88,8 +88,6 @@ class SolverStudy(object):
     def writeSolverSetup(self, vesselForestData, solidModelData, meshData, solverSetup, boundaryConditions,
                          materials, vesselPathNames, solutionStorage):
 
-        print(len(materials))
-
         outputDir = QtGui.QFileDialog.getExistingDirectory(None, 'Select output folder')
 
         if not outputDir:
@@ -107,7 +105,7 @@ class SolverStudy(object):
             os.makedirs(presolverDir)
 
         fileList = FileList(outputDir)
-        
+
         try:
             faceIndicesAndFileNames = self._computeFaceIndicesAndFileNames(solidModelData, vesselPathNames)
             solverInpData = SolverInpData(solverSetup, faceIndicesAndFileNames)
@@ -126,8 +124,8 @@ class SolverStudy(object):
             with Timer('Written adjacency'):
                 self._writeAdjacency(meshData, fileList)
             with Timer('Written boundary conditions'):
-                self._writeBoundaryConditions(vesselForestData, solidModelData, meshData, boundaryConditions, faceIndicesAndFileNames,
-                                              solverInpData, fileList)
+                self._writeBoundaryConditions(vesselForestData, solidModelData, meshData, boundaryConditions,
+                                              materials, faceIndicesAndFileNames, solverInpData, fileList)
 
             self._writeSolverSetup(solverInpData, fileList)
 
@@ -192,10 +190,10 @@ class SolverStudy(object):
 
         supreDir, supreFileName = os.path.split(supreFile)
         p = subprocess.Popen([presolverExecutable, supreFileName], cwd=supreDir,
-                             stderr=subprocess.STDOUT)# stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT)  # stdout=subprocess.PIPE,
 
         out, _ = p.communicate()
-        #self._logPresolverOutput(out)
+        # self._logPresolverOutput(out)
 
         if p.returncode != 0:
             Utils.logError("Presolver run has failed.")
@@ -314,23 +312,23 @@ class SolverStudy(object):
                 hadError = True
 
         return not hadError
-        
+
     def _getFaceElementMap(self, solidModelData, meshData):
         elementMap = {}
-    
+
         allFaceIdentifiers = [solidModelData.getFaceIdentifier(i) for i in
                               xrange(solidModelData.getNumberOfFaceIdentifiers())]
-                   
+
         index = 0
         for faceIdentifier in allFaceIdentifiers:
             for info in meshData.getMeshFaceInfoForFace(faceIdentifier):
                 elementMap[info[1]] = index
                 index += 1
-        
+
         return elementMap
 
-    def _writeBoundaryConditions(self, vesselForestData, solidModelData, meshData, boundaryConditions, faceIndicesAndFileNames,
-                                 solverInpData, fileList):
+    def _writeBoundaryConditions(self, vesselForestData, solidModelData, meshData, boundaryConditions, materials,
+                                 faceIndicesAndFileNames, solverInpData, fileList):
         if not self._validateBoundaryConditions(boundaryConditions):
             raise RuntimeError('Invalid boundary conditions. Aborting.')
 
@@ -360,13 +358,16 @@ class SolverStudy(object):
         initialPressure = None
 
         elementMap = self._getFaceElementMap(solidModelData, meshData)
-        
-        #materials = numpy.zeros((Material.MaterialType.count, len(elementMap)))
-        
+
+        materialValues = {}
+        self._computeMaterials(materialValues, materials, vesselForestData, solidModelData, meshData, elementMap)
+        numpy.set_printoptions(threshold=numpy.nan)
+        print(materialValues)
+
         # Processing priority for a particular BC type defines the order of processing the BCs
         # Default value is assumed to be 1. The higher the priority, the later the BC is processed
         bcProcessingPriorities = {
-            #Material.Material.__name__: 0,
+            # Material.Material.__name__: 0,
             DeformableWall.DeformableWall.__name__: 2}
 
         bcCompare = lambda l, r: \
@@ -494,10 +495,10 @@ class SolverStudy(object):
                 deformableGroup['Wall State Filter Term'] = False
                 deformableGroup['Wall State Filter Coefficient'] = 0
 
-            #elif is_boundary_condition_type(bc, Material.Material):
-            #    bc.computeMaterialValues(materials, vesselForestData, solidModelData, meshData, elementMap)
-                
-        #print(materials)
+                # elif is_boundary_condition_type(bc, Material.Material):
+                #    bc.computeMaterialValues(materials, vesselForestData, solidModelData, meshData, elementMap)
+
+        # print(materials)
 
         # Finalize
         if not rcrInfo.first:
@@ -570,32 +571,57 @@ class SolverStudy(object):
 
         return OrderedDict(sorted(faceIndicesAndFileNames.items(), key=lambda t: t[1][0]))
 
-    def _computeMaterials(self, materials, vesselForestData, solidModelData, meshData, elementMap):
+    def _getFaceCenter(self, faceInfo, meshData):
+        center = numpy.zeros(3)
+        for i in xrange(2, 5):
+            center = numpy.add(center, numpy.array(meshData.getNodeCoordinates(faceInfo[i])))
+
+        return center / 3
+
+    def _computeMaterials(self, materialValues, materials, vesselForestData, solidModelData, meshData, elementMap):
         # default value for material should come from BC?..  See comment below
 
         validFaceIdentifiers = lambda bc: (x for x in bc.faceIdentifiers if
                                            solidModelData.faceIdentifierIndex(x) != -1)
 
-        materialValues = {}
+        def getMaterialConstantValue(materialData):
+                if materialData.nComponents == 1:
+                    return m.getProperties()[materialData.name]
+                else:
+                    return [m.getProperties()[materialData.name][materialData.componentNames[component]] for component in xrange(materialData.nComponents)]
+
         for m in materials:
             for materialData in m.materialDatas:
                 if materialData.name not in materialValues:
                     newMat = numpy.zeros((len(elementMap), materialData.nComponents))
-
-                    for component in xrange(materialData.nComponents):
-                        newMat[:, component] = m.getProperties()[materialData.name] # Here!
-
+                    newMat[:] = getMaterialConstantValue(materialData) # Here
                     materialValues[materialData.name] = newMat
 
-                if materialData.representation == MaterialData.RepresentationType.Script:
+                if materialData.representation == MaterialData.RepresentationType.Table:
+                    materialData.tableData.data = numpy.sort(materialData.tableData.data, axis=0)
+                elif materialData.representation == MaterialData.RepresentationType.Script:
                     exec materialData.scriptData in globals(), locals()
                 for faceId in validFaceIdentifiers(m):
+                    constantValue = getMaterialConstantValue(materialData)
                     for info in meshData.getMeshFaceInfoForFace(faceId):
+                        center = self._getFaceCenter(info, meshData)
                         if materialData.representation == MaterialData.RepresentationType.Constant:
-                            value = m.getProperties()[materialData.name]
+                            value = constantValue
                         elif materialData.representation == MaterialData.RepresentationType.Table:
-                            value = -1 # Provide correct variable, then pass to interpolation, looks like need scipy
+                            if materialData.tableData.inputVariableType == MaterialData.InputVariableType.DistanceAlongPath:
+                                x = 0
+                            elif materialData.tableData.inputVariableType == MaterialData.InputVariableType.LocalRadius:
+                                x = 0
+                            elif materialData.tableData.inputVariableType == MaterialData.InputVariableType.x:
+                                x = center[0]
+                            elif materialData.tableData.inputVariableType == MaterialData.InputVariableType.y:
+                                x = center[1]
+                            elif materialData.tableData.inputVariableType == MaterialData.InputVariableType.z:
+                                x = center[2]
+
+                            value = [numpy.interp(x, materialData.tableData.data[0], materialData.tableData.data[component])
+                                     for component in xrange(1, materialData.nComponents + 1)]
                         elif materialData.representation == MaterialData.RepresentationType.Script:
-                            value = computeMaterialValue(0,0,0,0,0) # Provide correct values
+                            value = computeMaterialValue(0, 0, center[0], center[1], center[2])  # Provide correct values
 
                         materialValues[materialData.name][elementMap[info[1]]] = value

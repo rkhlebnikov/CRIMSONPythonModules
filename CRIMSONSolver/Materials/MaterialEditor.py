@@ -107,12 +107,12 @@ else:
             tableData = self.materialData.tableData.data
 
             if tableData is not None:
-                self.tableWidget.setRowCount(tableData.shape[0])
+                self.tableWidget.setRowCount(tableData.shape[1])
 
                 it = numpy.nditer(tableData, flags=['multi_index'])
                 while not it.finished:
-                    row = it.multi_index[0]
-                    col = 0 if len(it.multi_index) == 1 else it.multi_index[1]
+                    col = it.multi_index[0]
+                    row = 0 if len(it.multi_index) == 1 else it.multi_index[1]
                     self.tableWidget.setItem(row, col, QtGui.QTableWidgetItem(str(it[0])))
                     it.iternext()
 
@@ -121,11 +121,11 @@ else:
         def fillDataFromTable(self):
             if self.fillingTable:
                 return
-            self.materialData.tableData.data = numpy.empty((self.tableWidget.rowCount, self.tableWidget.columnCount))
+            self.materialData.tableData.data = numpy.empty((self.tableWidget.columnCount, self.tableWidget.rowCount))
             for row in xrange(self.tableWidget.rowCount):
                 for col in xrange(self.tableWidget.columnCount):
                     item = self.tableWidget.item(row, col)
-                    self.materialData.tableData.data[row, col] = float(item.text()) if item is not None else 0
+                    self.materialData.tableData.data[col, row] = float(item.text()) if item is not None else 0
 
         def setInputVariableType(self, type):
             self.materialData.tableData.inputVariableType = type
@@ -163,11 +163,11 @@ else:
                 return
 
             try:
-                data = numpy.loadtxt(fileName)
+                data = numpy.transpose(numpy.loadtxt(fileName))
                 if len(data.shape) <= 1:
                     nCols = len(data.shape)
                 else:
-                    nCols = data.shape[1]
+                    nCols = data.shape[0]
 
                 if nCols != self.materialData.nComponents + 1:
                     raise RuntimeError("Incorrect number of colums - expected {0}, got {1}"
@@ -191,7 +191,7 @@ else:
             if not fileName:
                 return
 
-            numpy.savetxt(fileName, tableData, fmt='%g', delimiter='\t')
+            numpy.savetxt(fileName, numpy.transpose(tableData), fmt='%g', delimiter='\t')
 
         ################################################################################
         # Script handling
