@@ -1,3 +1,5 @@
+.. _concepts:
+
 ********
 Concepts
 ********
@@ -114,9 +116,11 @@ A simulation mesh is passed to the ``setupSolver`` method of a solver study and 
 
 ``getNodeIdsForFace(faceIdentifier)``
     Returns a list of node indices for all model faces with face identifier ``faceIdentifier``.
-
-``getNodeIdsForFace(faceIdentifier)``
-    Returns a list of node indices for all model faces with face identifier ``faceIdentifier``.
+    Note, that node indices on the face edges are shared for edges between different faces
+    belonging to the wall (:mod:`FaceType.ftWall <PythonQt.CRIMSON.FaceType>`). However, for the edges between cap faces
+    (:mod:`FaceType.ftCapInflow <PythonQt.CRIMSON.FaceType>` and :mod:`FaceType.ftCapOutflow <PythonQt.CRIMSON.FaceType>`)
+    and wall faces, nodes at the edge always belong to the wall (i.e. for flow faces, the nodes at the edge will not
+    be included in the list returned by this function).
 
 ``getMeshFaceInfoForFace(faceIdentifier)``
     Returns a list of face information lists for all model faces with face identifier ``faceIdentifier``.

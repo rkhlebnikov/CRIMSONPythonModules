@@ -44,8 +44,11 @@ class Utils:
     
     The ``reloadAll`` method will reload and recompile all solver-setup related python code.
     
-    *Note*: for the changes to take effect, it is necessary to re-create the boundary conditions, 
-    boundary condition sets, solver setups and solver studies if the corresponding class definitions have changed.
+    *Note*: While this function recompiles the code, the objects already existing in the system will
+    still have the old definitions. If the changes do not affect the data stored in the python objects,
+    and only the code of the functions have changed, the easiest way for existing objects to pick up the
+    new definitions is to reload the project. However, if the data has changed (e.g. a property of a boundary has been added or removed), 
+    it is necessary to remove and re-create the corresponding objects.
     
     '''
 
