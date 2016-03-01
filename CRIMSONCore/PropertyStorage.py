@@ -14,7 +14,7 @@ class PropertyAccessor(object):
     def findItemIndex(propertyList, itemName):
         for i, property in enumerate(propertyList):
             propertyName, propertyValueKey = PropertyAccessor.getNameAndValueKey(property)
-            if propertyName == itemName:
+            if propertyName.lower() == itemName.lower():
                 return (propertyList, i, propertyValueKey)
             if isinstance(property[propertyValueKey], list):
                 result = PropertyAccessor.findItemIndex(property[propertyValueKey], itemName)
