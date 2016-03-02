@@ -605,13 +605,14 @@ class SolverStudy(object):
                     constantValue = getMaterialConstantValue(materialData)
                     for info in meshData.getMeshFaceInfoForFace(faceId):
                         center = self._getFaceCenter(info, meshData)
+                        distance, arc_length = vesselForestData.getClosestPoint(faceId, center[0], center[1], center[2])
                         if materialData.representation == MaterialData.RepresentationType.Constant:
                             value = constantValue
                         elif materialData.representation == MaterialData.RepresentationType.Table:
                             if materialData.tableData.inputVariableType == MaterialData.InputVariableType.DistanceAlongPath:
-                                x = 0
+                                x = arc_length
                             elif materialData.tableData.inputVariableType == MaterialData.InputVariableType.LocalRadius:
-                                x = 0
+                                x = distance
                             elif materialData.tableData.inputVariableType == MaterialData.InputVariableType.x:
                                 x = center[0]
                             elif materialData.tableData.inputVariableType == MaterialData.InputVariableType.y:
@@ -622,6 +623,6 @@ class SolverStudy(object):
                             value = [numpy.interp(x, materialData.tableData.data[0], materialData.tableData.data[component])
                                      for component in xrange(1, materialData.nComponents + 1)]
                         elif materialData.representation == MaterialData.RepresentationType.Script:
-                            value = computeMaterialValue(0, 0, center[0], center[1], center[2])  # Provide correct values
+                            value = computeMaterialValue(arc_length, distance, center[0], center[1], center[2])  # Provide correct values
 
                         materialValues[materialData.name][elementMap[info[1]]] = value
