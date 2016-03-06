@@ -47,10 +47,10 @@ class SolverStudy(object):
         self.boundaryConditionSetNodeUIDs = uids
 
     def getMaterialNodeUIDs(self):
-        return self.boundaryConditionSetNodeUIDs
+        return self.materialNodeUIDs
 
     def setMaterialNodeUIDs(self, uids):
-        self.boundaryConditionSetNodeUIDs = uids
+        self.materialNodeUIDs = uids
 
     def loadSolution(self):
         fullNames = QtGui.QFileDialog.getOpenFileNames(None, "Load solution")
@@ -76,7 +76,7 @@ class SolverStudy(object):
                     fields = PhastaSolverIO.readPhastaFile(PhastaSolverIO.PhastaRawFileReader(inFile), config)
 
                 for fieldName, fieldData in fields.iteritems():
-                    solutions.arrays.append(SolutionStorage.ArrayInfo(fieldName, fieldData.transpose()))
+                    solutions.arrays[fieldName] = fieldData.transpose()
 
             except Exception as e:
                 QtGui.QMessageBox.critical(None, "Solution loading failed",
@@ -156,16 +156,16 @@ class SolverStudy(object):
             rawReader = PhastaSolverIO.PhastaRawFileReader(restartFile)
             dataBlocksToReplace = ['byteorder magic number']
             newFields = {}
-            for solution in solutionStorage.arrays:
-                arrayDesc, fieldDesc = PhastaConfig.restartConfig.findDescriptorAndField(solution.name)
+            for name, data in solutionStorage.arrays:
+                arrayDesc, fieldDesc = PhastaConfig.restartConfig.findDescriptorAndField(name)
                 if arrayDesc is None:
                     Utils.logWarning(
-                        'Cannot write solution \'{0}\' to the restart file. Skipping.'.format(solution.name))
+                        'Cannot write solution \'{0}\' to the restart file. Skipping.'.format(name))
                     continue
-                Utils.logInformation('Appending solution data \'{0}\'...'.format(solution.name))
+                Utils.logInformation('Appending solution data \'{0}\'...'.format(name))
 
                 dataBlocksToReplace.append(arrayDesc.phastaDataBlockName)
-                newFields[fieldDesc.name] = solution.data.transpose()
+                newFields[fieldDesc.name] = data.transpose()
 
             _, tempFileName = tempfile.mkstemp()
             with open(tempFileName, 'wb') as tempFile:
@@ -313,20 +313,6 @@ class SolverStudy(object):
 
         return not hadError
 
-    def _getFaceElementMap(self, solidModelData, meshData):
-        elementMap = {}
-
-        allFaceIdentifiers = [solidModelData.getFaceIdentifier(i) for i in
-                              xrange(solidModelData.getNumberOfFaceIdentifiers())]
-
-        index = 0
-        for faceIdentifier in allFaceIdentifiers:
-            for info in meshData.getMeshFaceInfoForFace(faceIdentifier):
-                elementMap[info[1]] = index
-                index += 1
-
-        return elementMap
-
     def _writeBoundaryConditions(self, vesselForestData, solidModelData, meshData, boundaryConditions, materials,
                                  faceIndicesAndFileNames, solverInpData, fileList):
         if not self._validateBoundaryConditions(boundaryConditions):
@@ -357,12 +343,9 @@ class SolverStudy(object):
 
         initialPressure = None
 
-        elementMap = self._getFaceElementMap(solidModelData, meshData)
-
-        materialValues = {}
-        self._computeMaterials(materialValues, materials, vesselForestData, solidModelData, meshData, elementMap)
+        materialSolutionStorage = self.computeMaterials(materials, vesselForestData, solidModelData, meshData)
         numpy.set_printoptions(threshold=numpy.nan)
-        print(materialValues)
+        print(materialSolutionStorage.arrays)
 
         # Processing priority for a particular BC type defines the order of processing the BCs
         # Default value is assumed to be 1. The higher the priority, the later the BC is processed
@@ -578,8 +561,11 @@ class SolverStudy(object):
 
         return center / 3
 
-    def _computeMaterials(self, materialValues, materials, vesselForestData, solidModelData, meshData, elementMap):
+    # Compute materials and return them in form of SolutionStorage
+    def computeMaterials(self, materials, vesselForestData, solidModelData, meshData):
         # default value for material should come from BC?..  See comment below
+
+        solutionStorage = SolutionStorage()
 
         validFaceIdentifiers = lambda bc: (x for x in bc.faceIdentifiers if
                                            solidModelData.faceIdentifierIndex(x) != -1)
@@ -592,10 +578,10 @@ class SolverStudy(object):
 
         for m in materials:
             for materialData in m.materialDatas:
-                if materialData.name not in materialValues:
-                    newMat = numpy.zeros((len(elementMap), materialData.nComponents))
+                if materialData.name not in solutionStorage.arrays:
+                    newMat = numpy.zeros((meshData.getNFaces(), materialData.nComponents))
                     newMat[:] = getMaterialConstantValue(materialData) # Here
-                    materialValues[materialData.name] = newMat
+                    solutionStorage.arrays[materialData.name] = newMat
 
                 if materialData.representation == MaterialData.RepresentationType.Table:
                     materialData.tableData.data = numpy.sort(materialData.tableData.data, axis=0)
@@ -605,7 +591,9 @@ class SolverStudy(object):
                     constantValue = getMaterialConstantValue(materialData)
                     for info in meshData.getMeshFaceInfoForFace(faceId):
                         center = self._getFaceCenter(info, meshData)
-                        distance, arc_length = vesselForestData.getClosestPoint(faceId, center[0], center[1], center[2])
+                        distance, arc_length = vesselForestData.getClosestPoint(faceId, center[0], center[1], center[2]) \
+                            if vesselForestData is not None else (0, 0)
+
                         if materialData.representation == MaterialData.RepresentationType.Constant:
                             value = constantValue
                         elif materialData.representation == MaterialData.RepresentationType.Table:
@@ -625,4 +613,6 @@ class SolverStudy(object):
                         elif materialData.representation == MaterialData.RepresentationType.Script:
                             value = computeMaterialValue(arc_length, distance, center[0], center[1], center[2])  # Provide correct values
 
-                        materialValues[materialData.name][elementMap[info[1]]] = value
+                        solutionStorage.arrays[materialData.name][info[1]] = value
+                        #
+        return solutionStorage
