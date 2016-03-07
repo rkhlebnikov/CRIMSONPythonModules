@@ -594,7 +594,9 @@ class SolverStudy(object):
                         solutionStorage.arrays[materialData.name] = newMat
 
                     if materialData.representation == MaterialData.RepresentationType.Table:
-                        materialData.tableData.data = numpy.sort(materialData.tableData.data, axis=0)
+                        # sort by argument value, see http://stackoverflow.com/questions/2828059/sorting-arrays-in-numpy-by-column
+                        tableData = materialData.tableData.data.transpose()
+                        tableData = tableData[tableData[:,0].argsort()].transpose()
                     elif materialData.representation == MaterialData.RepresentationType.Script:
                         exec compile(materialData.scriptData, 'material {0}'.format(materialData.name), 'exec') in globals(), globals()
                     for faceId in validFaceIdentifiers(m):
@@ -618,10 +620,10 @@ class SolverStudy(object):
                                 elif materialData.tableData.inputVariableType == MaterialData.InputVariableType.z:
                                     x = center[2]
 
-                                value = [numpy.interp(x, materialData.tableData.data[0], materialData.tableData.data[component])
+                                value = [numpy.interp(x, tableData[0], tableData[component])
                                          for component in xrange(1, materialData.nComponents + 1)]
                             elif materialData.representation == MaterialData.RepresentationType.Script:
-                                value = computeMaterialValue(arc_length, distance, center[0], center[1], center[2])  # Provide correct values
+                                value = computeMaterialValue(arc_length, distance, center[0], center[1], center[2])
 
                             solutionStorage.arrays[materialData.name][info[1]] = value
                             #
