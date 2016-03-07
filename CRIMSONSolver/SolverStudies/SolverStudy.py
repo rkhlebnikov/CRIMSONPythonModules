@@ -596,8 +596,7 @@ class SolverStudy(object):
                     if materialData.representation == MaterialData.RepresentationType.Table:
                         materialData.tableData.data = numpy.sort(materialData.tableData.data, axis=0)
                     elif materialData.representation == MaterialData.RepresentationType.Script:
-                        s = compile(materialData.scriptData, 'materialData.scriptData', 'exec')
-                        exec s in globals(), locals()
+                        exec compile(materialData.scriptData, 'material {0}'.format(materialData.name), 'exec') in globals(), globals()
                     for faceId in validFaceIdentifiers(m):
                         constantValue = getMaterialConstantValue(materialData)
                         for info in meshData.getMeshFaceInfoForFace(faceId):
