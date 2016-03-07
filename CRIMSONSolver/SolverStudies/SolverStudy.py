@@ -3,8 +3,8 @@ import shutil
 import subprocess
 import tempfile
 from collections import OrderedDict
-
 import numpy
+import operator
 
 from PythonQt import QtGui
 from PythonQt.CRIMSON import FaceType
@@ -19,7 +19,6 @@ from CRIMSONSolver.SolverStudies.Timer import Timer
 from CRIMSONSolver.BoundaryConditions import NoSlip, InitialPressure, RCR, ZeroPressure, PrescribedVelocities, \
     DeformableWall
 from CRIMSONSolver.Materials import MaterialData
-
 
 class SolverStudy(object):
     def __init__(self):
@@ -47,7 +46,7 @@ class SolverStudy(object):
         self.boundaryConditionSetNodeUIDs = uids
 
     def getMaterialNodeUIDs(self):
-        return self.materialNodeUIDs
+        return self.materialNodeUIDs if 'materialNodeUIDs' in self.__dict__ else [] # Support for old scenes
 
     def setMaterialNodeUIDs(self, uids):
         self.materialNodeUIDs = uids
@@ -554,65 +553,77 @@ class SolverStudy(object):
 
         return OrderedDict(sorted(faceIndicesAndFileNames.items(), key=lambda t: t[1][0]))
 
-    def _getFaceCenter(self, faceInfo, meshData):
-        center = numpy.zeros(3)
-        for i in xrange(2, 5):
-            center = numpy.add(center, numpy.array(meshData.getNodeCoordinates(faceInfo[i])))
+#    def _getFaceCenter2(self, faceInfo, meshData):
+#        center = numpy.array(meshData.getNodeCoordinates(faceInfo[2]))
+#        numpy.add(center, meshData.getNodeCoordinates(faceInfo[3]), center)
+#        numpy.add(center, meshData.getNodeCoordinates(faceInfo[4]), center)
+#
+#        return center / 3
 
-        return center / 3
+    def _getFaceCenter(self, faceInfo, meshData):
+        center = meshData.getNodeCoordinates(faceInfo[2])
+        center = map(operator.add, center, meshData.getNodeCoordinates(faceInfo[3]))
+        center = map(operator.add, center, meshData.getNodeCoordinates(faceInfo[4]))
+
+        for i in xrange(3):
+            center[i] /= 3
+
+        return center
 
     # Compute materials and return them in form of SolutionStorage
     def computeMaterials(self, materials, vesselForestData, solidModelData, meshData):
-        # default value for material should come from BC?..  See comment below
+        with Timer('Compute materials'):
+            # default value for material should come from BC?..  See comment below
 
-        solutionStorage = SolutionStorage()
+            solutionStorage = SolutionStorage()
 
-        validFaceIdentifiers = lambda bc: (x for x in bc.faceIdentifiers if
-                                           solidModelData.faceIdentifierIndex(x) != -1)
+            validFaceIdentifiers = lambda bc: (x for x in bc.faceIdentifiers if
+                                               solidModelData.faceIdentifierIndex(x) != -1)
 
-        def getMaterialConstantValue(materialData):
-                if materialData.nComponents == 1:
-                    return m.getProperties()[materialData.name]
-                else:
-                    return [m.getProperties()[materialData.name][materialData.componentNames[component]] for component in xrange(materialData.nComponents)]
+            def getMaterialConstantValue(materialData):
+                    if materialData.nComponents == 1:
+                        return m.getProperties()[materialData.name]
+                    else:
+                        return [m.getProperties()[materialData.name][materialData.componentNames[component]] for component in xrange(materialData.nComponents)]
 
-        for m in materials:
-            for materialData in m.materialDatas:
-                if materialData.name not in solutionStorage.arrays:
-                    newMat = numpy.zeros((meshData.getNFaces(), materialData.nComponents))
-                    newMat[:] = getMaterialConstantValue(materialData) # Here
-                    solutionStorage.arrays[materialData.name] = newMat
+            for m in materials:
+                for materialData in m.materialDatas:
+                    if materialData.name not in solutionStorage.arrays:
+                        newMat = numpy.zeros((meshData.getNFaces(), materialData.nComponents))
+                        newMat[:] = getMaterialConstantValue(materialData) # Here
+                        solutionStorage.arrays[materialData.name] = newMat
 
-                if materialData.representation == MaterialData.RepresentationType.Table:
-                    materialData.tableData.data = numpy.sort(materialData.tableData.data, axis=0)
-                elif materialData.representation == MaterialData.RepresentationType.Script:
-                    exec materialData.scriptData in globals(), locals()
-                for faceId in validFaceIdentifiers(m):
-                    constantValue = getMaterialConstantValue(materialData)
-                    for info in meshData.getMeshFaceInfoForFace(faceId):
-                        center = self._getFaceCenter(info, meshData)
-                        distance, arc_length = vesselForestData.getClosestPoint(faceId, center[0], center[1], center[2]) \
-                            if vesselForestData is not None else (0, 0)
+                    if materialData.representation == MaterialData.RepresentationType.Table:
+                        materialData.tableData.data = numpy.sort(materialData.tableData.data, axis=0)
+                    elif materialData.representation == MaterialData.RepresentationType.Script:
+                        s = compile(materialData.scriptData, 'materialData.scriptData', 'exec')
+                        exec s in globals(), locals()
+                    for faceId in validFaceIdentifiers(m):
+                        constantValue = getMaterialConstantValue(materialData)
+                        for info in meshData.getMeshFaceInfoForFace(faceId):
+                            center = self._getFaceCenter(info, meshData)
+                            distance, arc_length = vesselForestData.getClosestPoint(faceId, center[0], center[1], center[2]) \
+                                if vesselForestData is not None else (0, 0)
 
-                        if materialData.representation == MaterialData.RepresentationType.Constant:
-                            value = constantValue
-                        elif materialData.representation == MaterialData.RepresentationType.Table:
-                            if materialData.tableData.inputVariableType == MaterialData.InputVariableType.DistanceAlongPath:
-                                x = arc_length
-                            elif materialData.tableData.inputVariableType == MaterialData.InputVariableType.LocalRadius:
-                                x = distance
-                            elif materialData.tableData.inputVariableType == MaterialData.InputVariableType.x:
-                                x = center[0]
-                            elif materialData.tableData.inputVariableType == MaterialData.InputVariableType.y:
-                                x = center[1]
-                            elif materialData.tableData.inputVariableType == MaterialData.InputVariableType.z:
-                                x = center[2]
+                            if materialData.representation == MaterialData.RepresentationType.Constant:
+                                value = constantValue
+                            elif materialData.representation == MaterialData.RepresentationType.Table:
+                                if materialData.tableData.inputVariableType == MaterialData.InputVariableType.DistanceAlongPath:
+                                    x = arc_length
+                                elif materialData.tableData.inputVariableType == MaterialData.InputVariableType.LocalRadius:
+                                    x = distance
+                                elif materialData.tableData.inputVariableType == MaterialData.InputVariableType.x:
+                                    x = center[0]
+                                elif materialData.tableData.inputVariableType == MaterialData.InputVariableType.y:
+                                    x = center[1]
+                                elif materialData.tableData.inputVariableType == MaterialData.InputVariableType.z:
+                                    x = center[2]
 
-                            value = [numpy.interp(x, materialData.tableData.data[0], materialData.tableData.data[component])
-                                     for component in xrange(1, materialData.nComponents + 1)]
-                        elif materialData.representation == MaterialData.RepresentationType.Script:
-                            value = computeMaterialValue(arc_length, distance, center[0], center[1], center[2])  # Provide correct values
+                                value = [numpy.interp(x, materialData.tableData.data[0], materialData.tableData.data[component])
+                                         for component in xrange(1, materialData.nComponents + 1)]
+                            elif materialData.representation == MaterialData.RepresentationType.Script:
+                                value = computeMaterialValue(arc_length, distance, center[0], center[1], center[2])  # Provide correct values
 
-                        solutionStorage.arrays[materialData.name][info[1]] = value
-                        #
+                            solutionStorage.arrays[materialData.name][info[1]] = value
+                            #
         return solutionStorage
