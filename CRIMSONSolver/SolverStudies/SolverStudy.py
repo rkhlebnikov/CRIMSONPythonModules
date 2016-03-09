@@ -75,7 +75,7 @@ class SolverStudy(object):
                     fields = PhastaSolverIO.readPhastaFile(PhastaSolverIO.PhastaRawFileReader(inFile), config)
 
                 for fieldName, fieldData in fields.iteritems():
-                    solutions.arrays[fieldName] = fieldData.transpose()
+                    solutions.arrays[fieldName] = SolutionStorage.ArrayInfo(fieldData.transpose())
 
             except Exception as e:
                 QtGui.QMessageBox.critical(None, "Solution loading failed",
@@ -155,7 +155,7 @@ class SolverStudy(object):
             rawReader = PhastaSolverIO.PhastaRawFileReader(restartFile)
             dataBlocksToReplace = ['byteorder magic number']
             newFields = {}
-            for name, data in solutionStorage.arrays:
+            for name, dataInfo in solutionStorage.arrays:
                 arrayDesc, fieldDesc = PhastaConfig.restartConfig.findDescriptorAndField(name)
                 if arrayDesc is None:
                     Utils.logWarning(
@@ -164,7 +164,7 @@ class SolverStudy(object):
                 Utils.logInformation('Appending solution data \'{0}\'...'.format(name))
 
                 dataBlocksToReplace.append(arrayDesc.phastaDataBlockName)
-                newFields[fieldDesc.name] = data.transpose()
+                newFields[fieldDesc.name] = dataInfo.data.transpose()
 
             _, tempFileName = tempfile.mkstemp()
             with open(tempFileName, 'wb') as tempFile:
@@ -591,7 +591,7 @@ class SolverStudy(object):
                     if materialData.name not in solutionStorage.arrays:
                         newMat = numpy.zeros((meshData.getNFaces(), materialData.nComponents))
                         newMat[:] = getMaterialConstantValue(materialData) # Here
-                        solutionStorage.arrays[materialData.name] = newMat
+                        solutionStorage.arrays[materialData.name] = SolutionStorage.ArrayInfo(newMat, materialData.componentNames)
 
                     if materialData.representation == MaterialData.RepresentationType.Table:
                         # sort by argument value, see http://stackoverflow.com/questions/2828059/sorting-arrays-in-numpy-by-column
@@ -625,6 +625,6 @@ class SolverStudy(object):
                             elif materialData.representation == MaterialData.RepresentationType.Script:
                                 value = computeMaterialValue(arc_length, distance, center[0], center[1], center[2])
 
-                            solutionStorage.arrays[materialData.name][info[1]] = value
+                            solutionStorage.arrays[materialData.name].data[info[1]] = value
                             #
         return solutionStorage
