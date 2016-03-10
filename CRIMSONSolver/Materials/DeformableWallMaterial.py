@@ -14,15 +14,15 @@ class DeformableWallMaterial(BoundaryCondition):
     def __init__(self):
         BoundaryCondition.__init__(self)
         self.properties = [
-            {"Stiffness": 1.0},
-            {"Thickness": 1.0, "attributes": {"suffix": " mm"}},
-            {
-                "MultiComponent": [
-                    {"A11": 0.0},
-                    {"A21": 1.0},
-                    {"A22": 0.0}
-                ]
-            }
+            {"Young's modulus": 4661000.0, "attributes": {"suffix": u" g/(mm\u00B7s\u00B2)", "minimum": 0.0}},
+            {"Thickness": 1.0, "attributes": {"suffix": u" mm", "minimum": 0.0}},
+#            {
+#                "MultiComponent": [
+#                    {"A11": 0.0},
+#                    {"A21": 1.0},
+#                    {"A22": 0.0}
+#                ]
+#            }
         ]
 
         self.materialDatas = []

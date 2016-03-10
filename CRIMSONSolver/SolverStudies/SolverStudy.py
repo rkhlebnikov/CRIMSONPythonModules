@@ -4,6 +4,7 @@ import subprocess
 import tempfile
 from collections import OrderedDict
 import numpy
+import math
 import operator
 
 from PythonQt import QtGui
@@ -115,7 +116,7 @@ class SolverStudy(object):
             self._writeSupreSurfaceIDs(faceIndicesAndFileNames, supreFile)
 
             with Timer('Written nbc and ebc files'):
-                self._writeNbcEbc(solidModelData, meshData, faceIndicesAndFileNames, fileList)
+                faceIndicesInAllExteriorFaces = self._writeNbcEbc(solidModelData, meshData, faceIndicesAndFileNames, fileList)
             with Timer('Written coordinates'):
                 self._writeNodeCoordinates(meshData, fileList)
             with Timer('Written connectivity'):
@@ -124,7 +125,7 @@ class SolverStudy(object):
                 self._writeAdjacency(meshData, fileList)
             with Timer('Written boundary conditions'):
                 self._writeBoundaryConditions(vesselForestData, solidModelData, meshData, boundaryConditions,
-                                              materials, faceIndicesAndFileNames, solverInpData, fileList)
+                                              materials, faceIndicesAndFileNames, solverInpData, fileList, faceIndicesInAllExteriorFaces)
 
             self._writeSolverSetup(solverInpData, fileList)
 
@@ -262,11 +263,16 @@ class SolverStudy(object):
             outputFile.write('{0}\n'.format(i + 1))  # Node indices are 1-based for presolver
 
     def _writeEbc(self, meshData, faceIdentifiers, outputFile):
+        faceIndicesInFile = []
         for faceIdentifier in faceIdentifiers:
             for info in meshData.getMeshFaceInfoForFace(faceIdentifier):
                 l = '{0}\n'.format(
                     ' '.join(str(x + 1) for x in info))  # element and node indices are 1-based for presolver
                 outputFile.write(l)
+
+                faceIndicesInFile.append(info[1])
+
+        return faceIndicesInFile
 
     def _writeNbcEbc(self, solidModelData, meshData, faceIndicesAndFileNames, fileList):
         allFaceIdentifiers = [solidModelData.getFaceIdentifier(i) for i in
@@ -276,9 +282,6 @@ class SolverStudy(object):
         self._writeNbc(meshData, [id for id in allFaceIdentifiers if id.faceType == FaceType.ftWall],
                        fileList[os.path.join('presolver', 'wall.nbc')])
 
-        # Write all_eterior_faces.ebc
-        self._writeEbc(meshData, allFaceIdentifiers, fileList[os.path.join('presolver', 'all_exterior_faces.ebc')])
-
         # Write per-face-identifier ebc and nbc files
         for i in xrange(solidModelData.getNumberOfFaceIdentifiers()):
             faceIdentifier = solidModelData.getFaceIdentifier(i)
@@ -286,6 +289,9 @@ class SolverStudy(object):
             baseFileName = os.path.join('presolver', faceIndicesAndFileNames[faceIdentifier][1])
             self._writeNbc(meshData, [faceIdentifier], fileList[baseFileName + '.nbc'])
             self._writeEbc(meshData, [faceIdentifier], fileList[baseFileName + '.ebc'])
+
+        # Write all_eterior_faces.ebc
+        return self._writeEbc(meshData, allFaceIdentifiers, fileList[os.path.join('presolver', 'all_exterior_faces.ebc')])
 
     def _writeSolverSetup(self, solverInpData, fileList):
         solverInpFile = fileList['solver.inp', 'wb']
@@ -313,7 +319,7 @@ class SolverStudy(object):
         return not hadError
 
     def _writeBoundaryConditions(self, vesselForestData, solidModelData, meshData, boundaryConditions, materials,
-                                 faceIndicesAndFileNames, solverInpData, fileList):
+                                 faceIndicesAndFileNames, solverInpData, fileList, faceIndicesInAllExteriorFaces):
         if not self._validateBoundaryConditions(boundaryConditions):
             raise RuntimeError('Invalid boundary conditions. Aborting.')
 
@@ -342,9 +348,7 @@ class SolverStudy(object):
 
         initialPressure = None
 
-        materialSolutionStorage = self.computeMaterials(materials, vesselForestData, solidModelData, meshData)
-        numpy.set_printoptions(threshold=numpy.nan)
-        print(materialSolutionStorage.arrays)
+        materialStorage = self.computeMaterials(materials, vesselForestData, solidModelData, meshData)
 
         # Processing priority for a particular BC type defines the order of processing the BCs
         # Default value is assumed to be 1. The higher the priority, the later the BC is processed
@@ -477,8 +481,33 @@ class SolverStudy(object):
                 deformableGroup['Wall State Filter Term'] = False
                 deformableGroup['Wall State Filter Coefficient'] = 0
 
-                # elif is_boundary_condition_type(bc, Material.Material):
-                #    bc.computeMaterialValues(materials, vesselForestData, solidModelData, meshData, elementMap)
+                # Check if external material is present
+                if 'Stiffness' in materialStorage.arrays and 'Thickness' in materialStorage.arrays:
+                    deformableGroup['Use SWB File'] = True
+                    supreFile.write('read_SWB_ISO SWB.dat\n')
+                    swbFile = fileList[os.path.join('presolver', 'SWB.dat')]
+                    thicknessArray = materialStorage.arrays['Thickness'].data
+                    stiffnessArray = materialStorage.arrays['Stiffness'].data
+
+                    v = bc.getProperties()["Poisson ratio"]
+                    k = shearConstant # ??
+                    for i, faceId in enumerate(faceIndicesInAllExteriorFaces):
+                        t = thicknessArray[faceId][0]
+                        E = stiffnessArray[faceId][0]
+
+                        if numpy.isnan(t):
+                            t = bc.getProperties()["Thickness"]
+                        if numpy.isnan(E):
+                            E = bc.getProperties()["Young's modulus"]
+
+                        S11 = S21 = S22 = S31 = S32 = 0.0
+                        v2 = math.pow(v,2)
+                        K11 = E / (1 - v2)
+                        K12 = (E * v) / (1 - v2)
+                        K33 = (0.5 * E * (1 - v) ) / (1 - v2)
+                        K44 = (0.5 * k * E * (1 - v) ) / (1 - v2)
+
+                        swbFile.write('{0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10}\n'.format(i + 1, t, S11, S21, S22, S31, S32, K11, K12, K33, K44))
 
         # print(materials)
 
