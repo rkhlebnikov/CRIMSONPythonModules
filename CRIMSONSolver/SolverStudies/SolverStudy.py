@@ -573,8 +573,6 @@ class SolverStudy(object):
     # Compute materials and return them in form of SolutionStorage
     def computeMaterials(self, materials, vesselForestData, solidModelData, meshData):
         with Timer('Compute materials'):
-            # default value for material should come from BC?..  See comment below
-
             solutionStorage = SolutionStorage()
 
             validFaceIdentifiers = lambda bc: (x for x in bc.faceIdentifiers if
@@ -590,7 +588,7 @@ class SolverStudy(object):
                 for materialData in m.materialDatas:
                     if materialData.name not in solutionStorage.arrays:
                         newMat = numpy.zeros((meshData.getNFaces(), materialData.nComponents))
-                        newMat[:] = getMaterialConstantValue(materialData) # Here
+                        newMat[:] = numpy.NAN
                         solutionStorage.arrays[materialData.name] = SolutionStorage.ArrayInfo(newMat, materialData.componentNames)
 
                     if materialData.representation == MaterialData.RepresentationType.Table:
