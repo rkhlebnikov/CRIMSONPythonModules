@@ -1,14 +1,14 @@
-from CRIMSONCore.BoundaryCondition import BoundaryCondition
+from CRIMSONCore.FaceData import FaceData
 from PythonQt.CRIMSON import FaceType
 
 
-class InitialPressure(BoundaryCondition):
+class InitialPressure(FaceData):
     unique = True
     humanReadableName = "Initial pressure"
     applicableFaceTypes = []
 
     def __init__(self):
-        BoundaryCondition.__init__(self)
+        FaceData.__init__(self)
         self.properties = [
             {
                 "Initial pressure": 13332.0,

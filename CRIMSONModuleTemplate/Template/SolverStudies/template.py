@@ -10,6 +10,7 @@ class {{ClassName}}(object):
         self.meshNodeUID = ""
         self.solverSetupNodeUID = ""
         self.boundaryConditionSetNodeUIDs = []
+        self.materialNodeUIDs = []
 
     def getMeshNodeUID(self):
         return self.meshNodeUID
@@ -28,13 +29,19 @@ class {{ClassName}}(object):
 
     def setBoundaryConditionSetNodeUIDs(self, uids):
         self.boundaryConditionSetNodeUIDs = uids
+        
+    def getMaterialNodeUIDs(self):
+        return self.materialNodeUIDs
+
+    def setMaterialNodeUIDs(self, uids):
+        self.materialNodeUIDs = uids
 
     def loadSolution(self):
         # Implement if needed - see documentation
         pass
 
     def writeSolverSetup(self, vesselForestData, solidModelData, meshData, solverSetup, boundaryConditions,
-                         vesselPathNames, solutionStorage):
+                         materials, vesselPathNames, solutionStorage):
         # Get the output folder 
         outputDir = QtGui.QFileDialog.getExistingDirectory(None, 'Select output folder')
 

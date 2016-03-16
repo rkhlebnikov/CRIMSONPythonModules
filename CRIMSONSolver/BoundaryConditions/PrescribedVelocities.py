@@ -1,6 +1,6 @@
 import numpy
 
-from CRIMSONCore.BoundaryCondition import BoundaryCondition
+from CRIMSONCore.FaceData import FaceData
 from CRIMSONSolver.BoundaryConditions.PrescribedVelocitiesEditor import PrescribedVelocitiesEditor
 
 from PythonQt.CRIMSON import FaceType
@@ -10,13 +10,13 @@ class ProfileType(object):
     Parabolic, Womersley, Plug = range(3)
 
 
-class PrescribedVelocities(BoundaryCondition):
+class PrescribedVelocities(FaceData):
     unique = False
     humanReadableName = "Prescribed velocities"
     applicableFaceTypes = [FaceType.ftCapInflow, FaceType.ftCapOutflow]
 
     def __init__(self):
-        BoundaryCondition.__init__(self)
+        FaceData.__init__(self)
         self.properties = [
             {
                 "Profile type": ProfileType.Parabolic,

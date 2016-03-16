@@ -21,6 +21,7 @@ from CRIMSONSolver.BoundaryConditions import NoSlip, InitialPressure, RCR, ZeroP
     DeformableWall
 from CRIMSONSolver.Materials import MaterialData
 
+
 class SolverStudy(object):
     def __init__(self):
         self.meshNodeUID = ""
@@ -47,7 +48,7 @@ class SolverStudy(object):
         self.boundaryConditionSetNodeUIDs = uids
 
     def getMaterialNodeUIDs(self):
-        return self.materialNodeUIDs if 'materialNodeUIDs' in self.__dict__ else [] # Support for old scenes
+        return self.materialNodeUIDs if 'materialNodeUIDs' in self.__dict__ else []  # Support for old scenes
 
     def setMaterialNodeUIDs(self, uids):
         self.materialNodeUIDs = uids
@@ -116,7 +117,8 @@ class SolverStudy(object):
             self._writeSupreSurfaceIDs(faceIndicesAndFileNames, supreFile)
 
             with Timer('Written nbc and ebc files'):
-                faceIndicesInAllExteriorFaces = self._writeNbcEbc(solidModelData, meshData, faceIndicesAndFileNames, fileList)
+                faceIndicesInAllExteriorFaces = self._writeNbcEbc(solidModelData, meshData, faceIndicesAndFileNames,
+                                                                  fileList)
             with Timer('Written coordinates'):
                 self._writeNodeCoordinates(meshData, fileList)
             with Timer('Written connectivity'):
@@ -125,7 +127,8 @@ class SolverStudy(object):
                 self._writeAdjacency(meshData, fileList)
             with Timer('Written boundary conditions'):
                 self._writeBoundaryConditions(vesselForestData, solidModelData, meshData, boundaryConditions,
-                                              materials, faceIndicesAndFileNames, solverInpData, fileList, faceIndicesInAllExteriorFaces)
+                                              materials, faceIndicesAndFileNames, solverInpData, fileList,
+                                              faceIndicesInAllExteriorFaces)
 
             self._writeSolverSetup(solverInpData, fileList)
 
@@ -291,7 +294,8 @@ class SolverStudy(object):
             self._writeEbc(meshData, [faceIdentifier], fileList[baseFileName + '.ebc'])
 
         # Write all_eterior_faces.ebc
-        return self._writeEbc(meshData, allFaceIdentifiers, fileList[os.path.join('presolver', 'all_exterior_faces.ebc')])
+        return self._writeEbc(meshData, allFaceIdentifiers,
+                              fileList[os.path.join('presolver', 'all_exterior_faces.ebc')])
 
     def _writeSolverSetup(self, solverInpData, fileList):
         solverInpFile = fileList['solver.inp', 'wb']
@@ -482,34 +486,39 @@ class SolverStudy(object):
                 deformableGroup['Wall State Filter Coefficient'] = 0
 
                 # Check if external material is present
-                if 'Stiffness' in materialStorage.arrays and 'Thickness' in materialStorage.arrays:
+                if "Young's modulus" in materialStorage.arrays and 'Thickness' in materialStorage.arrays:
                     deformableGroup['Use SWB File'] = True
                     supreFile.write('read_SWB_ISO SWB.dat\n')
                     swbFile = fileList[os.path.join('presolver', 'SWB.dat')]
                     thicknessArray = materialStorage.arrays['Thickness'].data
-                    stiffnessArray = materialStorage.arrays['Stiffness'].data
+                    stiffnessArray = materialStorage.arrays["Young's modulus"].data
 
                     v = bc.getProperties()["Poisson ratio"]
-                    k = shearConstant # ??
+                    v2 = math.pow(v, 2)
+                    Econst = bc.getProperties()["Young's modulus"]
+                    tConst = bc.getProperties()["Thickness"]
+                    k = shearConstant
+
+                    # Todo: do this only for faces belonging to the bc
                     for i, faceId in enumerate(faceIndicesInAllExteriorFaces):
                         t = thicknessArray[faceId][0]
                         E = stiffnessArray[faceId][0]
 
                         if numpy.isnan(t):
-                            t = bc.getProperties()["Thickness"]
+                            t = tConst
                         if numpy.isnan(E):
-                            E = bc.getProperties()["Young's modulus"]
+                            E = Econst
 
                         S11 = S21 = S22 = S31 = S32 = 0.0
-                        v2 = math.pow(v,2)
                         K11 = E / (1 - v2)
                         K12 = (E * v) / (1 - v2)
-                        K33 = (0.5 * E * (1 - v) ) / (1 - v2)
-                        K44 = (0.5 * k * E * (1 - v) ) / (1 - v2)
+                        K33 = (0.5 * E * (1 - v)) / (1 - v2)
+                        K44 = (0.5 * k * E * (1 - v)) / (1 - v2)
 
-                        swbFile.write('{0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10}\n'.format(i + 1, t, S11, S21, S22, S31, S32, K11, K12, K33, K44))
+                        swbFile.write(
+                            '{0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10}\n'.format(i + 1, t, S11, S21, S22, S31, S32,
+                                                                                    K11, K12, K33, K44))
 
-        # print(materials)
 
         # Finalize
         if not rcrInfo.first:
@@ -582,12 +591,12 @@ class SolverStudy(object):
 
         return OrderedDict(sorted(faceIndicesAndFileNames.items(), key=lambda t: t[1][0]))
 
-#    def _getFaceCenter2(self, faceInfo, meshData):
-#        center = numpy.array(meshData.getNodeCoordinates(faceInfo[2]))
-#        numpy.add(center, meshData.getNodeCoordinates(faceInfo[3]), center)
-#        numpy.add(center, meshData.getNodeCoordinates(faceInfo[4]), center)
-#
-#        return center / 3
+    #    def _getFaceCenter2(self, faceInfo, meshData):
+    #        center = numpy.array(meshData.getNodeCoordinates(faceInfo[2]))
+    #        numpy.add(center, meshData.getNodeCoordinates(faceInfo[3]), center)
+    #        numpy.add(center, meshData.getNodeCoordinates(faceInfo[4]), center)
+    #
+    #        return center / 3
 
     def _getFaceCenter(self, faceInfo, meshData):
         center = meshData.getNodeCoordinates(faceInfo[2])
@@ -608,29 +617,33 @@ class SolverStudy(object):
                                                solidModelData.faceIdentifierIndex(x) != -1)
 
             def getMaterialConstantValue(materialData):
-                    if materialData.nComponents == 1:
-                        return m.getProperties()[materialData.name]
-                    else:
-                        return [m.getProperties()[materialData.name][materialData.componentNames[component]] for component in xrange(materialData.nComponents)]
+                if materialData.nComponents == 1:
+                    return m.getProperties()[materialData.name]
+                else:
+                    return [m.getProperties()[materialData.name][materialData.componentNames[component]] for component
+                            in xrange(materialData.nComponents)]
 
             for m in materials:
                 for materialData in m.materialDatas:
                     if materialData.name not in solutionStorage.arrays:
                         newMat = numpy.zeros((meshData.getNFaces(), materialData.nComponents))
                         newMat[:] = numpy.NAN
-                        solutionStorage.arrays[materialData.name] = SolutionStorage.ArrayInfo(newMat, materialData.componentNames)
+                        solutionStorage.arrays[materialData.name] = SolutionStorage.ArrayInfo(newMat,
+                                                                                              materialData.componentNames)
 
                     if materialData.representation == MaterialData.RepresentationType.Table:
                         # sort by argument value, see http://stackoverflow.com/questions/2828059/sorting-arrays-in-numpy-by-column
                         tableData = materialData.tableData.data.transpose()
-                        tableData = tableData[tableData[:,0].argsort()].transpose()
+                        tableData = tableData[tableData[:, 0].argsort()].transpose()
                     elif materialData.representation == MaterialData.RepresentationType.Script:
-                        exec compile(materialData.scriptData, 'material {0}'.format(materialData.name), 'exec') in globals(), globals()
+                        exec compile(materialData.scriptData, 'material {0}'.format(materialData.name),
+                                     'exec') in globals(), globals()
                     for faceId in validFaceIdentifiers(m):
                         constantValue = getMaterialConstantValue(materialData)
                         for info in meshData.getMeshFaceInfoForFace(faceId):
                             center = self._getFaceCenter(info, meshData)
-                            distance, arc_length = vesselForestData.getClosestPoint(faceId, center[0], center[1], center[2]) \
+                            distance, arc_length = vesselForestData.getClosestPoint(faceId, center[0], center[1],
+                                                                                    center[2]) \
                                 if vesselForestData is not None else (0, 0)
 
                             if materialData.representation == MaterialData.RepresentationType.Constant:

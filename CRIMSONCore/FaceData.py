@@ -1,12 +1,12 @@
 from CRIMSONCore.PropertyStorage import PropertyStorage
 
 
-class BoundaryCondition(PropertyStorage):
+class FaceData(PropertyStorage):
     '''
-    Base class for all boundary conditions.
+    Base class for all face-attached data classes (e.g. boundary conditions and materials).
 
-    In addition to having the functionality of a :mod:`PropertyStorage <CRIMSONCore.PropertyStorage>`, the boundary condition
-    also stores a list of :mod:`face identifiers <CRIMSONCore.FaceIdentifier>` stored in ``BoundaryCondition.faceIdentifiers``
+    In addition to having the functionality of a :mod:`PropertyStorage <CRIMSONCore.PropertyStorage>`, the face data
+    also stores a list of :mod:`face identifiers <CRIMSONCore.FaceIdentifier>` stored in ``FaceData.faceIdentifiers``
     which are filled by the C++ code through user interaction.
 
     '''

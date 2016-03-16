@@ -1,13 +1,13 @@
-from CRIMSONCore.BoundaryCondition import BoundaryCondition
+from CRIMSONCore.FaceData import FaceData
 from PythonQt.CRIMSON import FaceType
 
-class RCR(BoundaryCondition):
+class RCR(FaceData):
     unique = False
     humanReadableName = "RCR"
     applicableFaceTypes = [FaceType.ftCapInflow, FaceType.ftCapOutflow]
 
     def __init__(self):
-        BoundaryCondition.__init__(self)
+        FaceData.__init__(self)
         resistancePropertyAttributes = {"suffix": u" g/(mm\u2074\u00B7s)", "minimum": 0.0}
         capacitancePropertyAttributes = {"suffix": u" mm\u2074\u00B7s\u00B2/g", "minimum": 0.0}
         self.properties = [

@@ -2,6 +2,7 @@ from {{ModuleName}}.BoundaryConditionSets import ({{#BoundaryConditionSetNames}}
 from {{ModuleName}}.BoundaryConditions import ({{#BoundaryConditionNames}}{{name}}, {{/BoundaryConditionNames}})
 from {{ModuleName}}.SolverSetups import ({{#SolverSetupNames}}{{name}}, {{/SolverSetupNames}})
 from {{ModuleName}}.SolverStudies import ({{#SolverStudyNames}}{{name}}, {{/SolverStudyNames}})
+from {{ModuleName}}.Materials import ({{#MaterialNames}}{{name}}, {{/MaterialNames}})
 
 
 class {{SolverSetupManagerName}}(object):
@@ -28,6 +29,11 @@ class {{SolverSetupManagerName}}(object):
                 "{{name}}": {{name}}.{{name}},
             {{/BoundaryConditionNames}}
             }
+        self.materialClasses = {
+            {{#MaterialNames}}
+                "{{name}}": {{name}}.{{name}},
+            {{/MaterialNames}}
+            }
 
     # Boundary condition sets
     def getBoundaryConditionSetNames(self):
@@ -42,6 +48,13 @@ class {{SolverSetupManagerName}}(object):
 
     def createBoundaryCondition(self, name, ownerBCSet):
         return self.boundaryConditionClasses[name]()
+
+    # Materials
+    def getMaterialNames(self):
+        return self.materialClasses.keys()
+
+    def createMaterial(self, name):
+        return self.materialClasses[name]()
 
     # Solver setups
     def getSolverSetupNames(self):

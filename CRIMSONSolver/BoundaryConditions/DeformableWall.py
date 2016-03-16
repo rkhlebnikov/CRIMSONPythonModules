@@ -1,13 +1,13 @@
-from CRIMSONCore.BoundaryCondition import BoundaryCondition
+from CRIMSONCore.FaceData import FaceData
 from PythonQt.CRIMSON import FaceType
 
-class DeformableWall(BoundaryCondition):
+class DeformableWall(FaceData):
     unique = True
     humanReadableName = "Deformable wall"
     applicableFaceTypes = [FaceType.ftWall]
 
     def __init__(self):
-        BoundaryCondition.__init__(self)
+        FaceData.__init__(self)
         self.properties = [
             {
                 "Vessel wall properties":
