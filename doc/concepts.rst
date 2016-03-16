@@ -12,6 +12,7 @@ There are several basic concepts that CRIMSON uses to allow specification of the
 * Solver setup manager
 * Boundary condition
 * Boundary condition set
+* Material
 * Solver setup
 * Solver study
 
@@ -31,6 +32,11 @@ A vessel tree is passed to the ``setupSolver`` method of a solver study and has 
     connected simulation domain.
 
 .. image:: images/components.png
+
+|
+
+``getClosestPoint(faceIdentifier, x, y, z)``
+    Returns the distance to arc length along the vessel path defined by the ``faceIdentifier`` to the point at coordinates ``(x, y, z)``.
 
 .. _geometric-model:
 
@@ -126,11 +132,11 @@ A simulation mesh is passed to the ``setupSolver`` method of a solver study and 
     Returns a list of face information lists for all model faces with face identifier ``faceIdentifier``.
     Each element of the returned list contains the following information::
 
-        [0] elementIndex     - element index that the mesh face belongs to
-        [1] globalFaceIndex  - unused
-        [2] nodeIndex        - index of the first node
-        [3] nodeIndex        - index of the second node
-        [4] nodeIndex        - index of the third node
+        [0] elementIndex - element index that the mesh face belongs to
+        [1] faceIndex    - face index
+        [2] nodeIndex    - index of the first node
+        [3] nodeIndex    - index of the second node
+        [4] nodeIndex    - index of the third node
 
 .. _solver-setup-manager:
 
@@ -170,13 +176,20 @@ A solver setup manager class is expected to implement the following interface:
     Return an object of solver study class for the solver study type ``name``.
     ``name`` will be chosen from the list returned by ``getSolverSetupNames()``.
 
+``getMaterialNames()``
+    Return a list of strings containing the names of types of materials that the user can choose from.
+
+``createMaterial(name)``
+    Return an object of material class for the boundary condition type ``name``.
+    ``name`` will be chosen from the list returned by ``getBoundaryConditionNames()``.
+
 .. _boundary-condition:
 
 Boundary condition
 ==================
 
 Boundary condition represents a single boundary condition applied to the part of the simulation domain boundary.
-It is recommended to inherit the specific boundary condition classes from :mod:`CRIMSONCore.BoundaryCondition` and fill
+It is recommended to inherit the specific boundary condition classes from :mod:`CRIMSONCore.FaceData` and fill
 in the properties in the boundary condition class' constructor.
 
 In addition to the properties exposed to the user through the :mod:`CRIMSONCore.PropertyStorage`,
@@ -188,38 +201,67 @@ be saved to the scene and thus the ``__getstate__`` and ``__setstate__`` methods
 Please see the implementation of ``CRIMSONSolver.BoundaryConditions.PrescribedVelocities`` class for a reference
 implementation.
 
-Furthermore, the boundary condition class must define a class-scope member variables ``unique`` (temporarily unused) and  ``applicableFaceTypes``.
+Furthermore, the boundary condition class must define a class-scope member variables ``unique`` and  ``applicableFaceTypes``.
 The ``applicableFaceTypes`` is a list of :mod:`PythonQt.CRIMSON.FaceType` the boundary condition can be applied to.
 
 An example implementation of a boundary condition::
 
-    from CRIMSONCore.BoundaryCondition import BoundaryCondition
+    from CRIMSONCore.FaceData import FaceData
     from PythonQt.CRIMSON import FaceType
 
-    class RCR(BoundaryCondition):
+    class RCR(FaceData):
         unique = False
+        humanReadableName = "RCR"
         applicableFaceTypes = [FaceType.ftCapInflow, FaceType.ftCapOutflow]
 
         def __init__(self):
-            BoundaryCondition.__init__(self)
+            FaceData.__init__(self)
             resistancePropertyAttributes = {"suffix": u" g/(mm\u2074\u00B7s)", "minimum": 0.0}
             capacitancePropertyAttributes = {"suffix": u" mm\u2074\u00B7s\u00B2/g", "minimum": 0.0}
             self.properties = [
                 {
-                    "name": "Proximal resistance",
-                    "value": 100.0,
+                    "Proximal resistance": 100.0,
                     "attributes": resistancePropertyAttributes
                 },
                 {
-                    "name": "Capacitance",
-                    "value": 1e-5,
+                    "Capacitance": 1e-5,
                     "attributes": capacitancePropertyAttributes
                 },
                 {
-                    "name": "Distal resistance",
-                    "value": 1000.0,
+                    "Distal resistance": 1000.0,
                     "attributes": resistancePropertyAttributes
                 }
+            ]
+
+.. _material:
+
+Material
+==================
+
+Material objects represent a single type of material applied to the part of the simulation domain boundary.
+The faces that the material is applied to, its properties, the ``unique`` flag and custom editor widget behaviour are
+identical to those of the boundary condition classes.
+
+An example implementation of a material::
+
+    from CRIMSONCore.FaceData import FaceData
+    from PythonQt.CRIMSON import FaceType
+
+    class DeformableWallMaterial(FaceData):
+        unique = False
+        humanReadableName = "Deformable wall material"
+        applicableFaceTypes = [FaceType.ftWall]
+
+        def __init__(self):
+            self.properties = [
+                {
+                    "Young's modulus": 4661000.0,
+                    "attributes": {"suffix": u" g/(mm\u00B7s\u00B2)", "minimum": 0.0}
+                },
+                {
+                    "Thickness": 1.0,
+                    "attributes": {"suffix": u" mm", "minimum": 0.0}
+                },
             ]
 
 
@@ -256,31 +298,25 @@ An example implementation of a solver setup::
         PropertyStorage.__init__(self)
         self.properties = [
             {
-                "name": "Time parameters",
-                "value": [
+                "Time parameters": [
                     {
-                        "name": "Number of time steps",
-                        "value": 200,
+                        "Number of time steps": 200,
                         "attributes": {"minimum": 1}
                     },
                     {
-                        "name": "Time step size",
-                        "value": 0.01,
+                        "Time step size": 0.01,
                         "attributes": {"minimum": 0.0, "suffix": " s"}
                     }
                 ]
             },
             {
-                "name": "Fluid parameters",
-                "value": [
+                "Fluid parameters": [
                     {
-                        "name": "Viscosity",
-                        "value": 0.004,
+                        "Viscosity": 0.004,
                         "attributes": {"minimum": 0.0, "suffix": u" g/(mm\u00B7s)"}
                     },
                     {
-                        "name": "Density",
-                        "value": 0.00106,
+                        "Density": 0.00106,
                         "attributes": {"minimum": 0.0, "suffix": u" g/mm\u00B3"}
                     }
                 ]

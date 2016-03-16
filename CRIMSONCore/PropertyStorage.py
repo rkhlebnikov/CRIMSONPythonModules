@@ -56,19 +56,17 @@ class PropertyStorage(object):
     The PropertyStorage class is a convenience class for communicating the various properties of a boundary condition
     or a solver setup to the C++ code for the user to edit.
 
-    The property is defined as a dictionary which must contain the ``name`` and ``value`` keys.
-    The type of the property value is determined by the type of value mapped to by the ``value`` key::
+    The property is defined as a dictionary which must contain at least one string key with a value.
+    The type of the property value is determined by the type of value itself::
 
         {
-            "name": "IntegerProperty",
-            "value": 42
+            "IntegerProperty": 42
         }
 
     will define a property with an integer value, whereas ::
 
         {
-            "name": "DoubleProperty",
-            "value": 42.0
+            "DoubleProperty": 42.0
         }
 
     will define a property with a floating-point value.
@@ -77,26 +75,22 @@ class PropertyStorage(object):
     minimum and maximum values, stored in a dictionary::
 
         {
-            "name": "PropertyWithAttributes",
-            "value": 42,
+            "PropertyWithAttributes": 42,
             "attributes": {"minumum": 3, "maximum": 100}
         }
 
     The types of properties and their attributes are described in section `Property reference`_.
 
-    In addition to value-properties, various properties can also be grouped. The group is a property, whose ``value``
+    In addition to value-properties, various properties can also be grouped. The group is a property, whose value
     attribute is a list of other properties::
 
         {
-            "name": "Group",
-            "value": [
+            "Group": [
                 {
-                    "name": "Property 1",
-                    "value": 0
+                    "Property 1": 0
                 },
                 {
-                    "name": "Property 2",
-                    "value": 5.0
+                    "Property 2": 5.0
                 }
             ]
         }
@@ -110,50 +104,43 @@ class PropertyStorage(object):
     changed at run time. Here's a complete example of defining a solver setup with multiple grouped parameters::
 
         class SolverSetup(PropertyStorage):
-            def __init__(self):
-                PropertyStorage.__init__(self)
-                self.properties = [
-                    {
-                        "name": "Time parameters",
-                        "value": [
-                            {
-                                "name": "Number of time steps",
-                                "value": 200,
-                                "attributes": {"minimum": 1}
-                            },
-                            {
-                                "name": "Time step size",
-                                "value": 0.01,
-                                "attributes": {"minimum": 0.0, "suffix": " s"}
-                            }
-                        ]
-                    },
-                    {
-                        "name": "Fluid parameters",
-                        "value": [
-                            {
-                                "name": "Viscosity",
-                                "value": 0.004,
-                                "attributes": {"minimum": 0.0, "suffix": u" g/(mm\u00B7s)"}
-                            },
-                            {
-                                "name": "Density",
-                                "value": 0.00106,
-                                "attributes": {"minimum": 0.0, "suffix": u" g/mm\u00B3"}
-                            }
-                        ]
-                    },
-                ]
+        def __init__(self):
+            PropertyStorage.__init__(self)
+            self.properties = [
+                {
+                    "Time parameters": [
+                        {
+                            "Number of time steps": 200,
+                            "attributes": {"minimum": 1}
+                        },
+                        {
+                            "Time step size": 0.01,
+                            "attributes": {"minimum": 0.0, "suffix": " s"}
+                        }
+                    ]
+                },
+                {
+                    "Fluid parameters": [
+                        {
+                            "Viscosity": 0.004,
+                            "attributes": {"minimum": 0.0, "suffix": u" g/(mm\u00B7s)"}
+                        },
+                        {
+                            "Density": 0.00106,
+                            "attributes": {"minimum": 0.0, "suffix": u" g/mm\u00B3"}
+                        }
+                    ]
+                },
+            ]
 
 .. _`Property reference`:
 
     **Property reference**
 
-    Each property is a dictionary with two required keys ``name`` and ``value``, and an optional key ``attributes``::
+    Each property is a dictionary with a required keys-value pair from property name to its value, and an optional key ``attributes``::
 
         {
-            "name": str,
-            "value": value_type,
+            str: value_type,
             "attributes": dict
         }
 
@@ -174,8 +161,7 @@ class PropertyStorage(object):
         Example::
 
             {
-                "name": "Number of time steps",
-                "value": 200,
+                "Number of time steps": 200,
                 "attributes": {
                     "minimum": 1,
                     "maximum": 10000,
@@ -201,8 +187,7 @@ class PropertyStorage(object):
         Example::
 
             {
-                "name": "Viscosity",
-                "value": 0.004,
+                "Viscosity": 0.004,
                 "attributes": {
                     "minimum": 0.0,
                     "maximum": 100.0,
@@ -222,8 +207,7 @@ class PropertyStorage(object):
         Example::
 
             {
-                "name": "Residual control",
-                "value": True,
+                "Residual control": True,
             }
 
     *String property*
@@ -235,8 +219,7 @@ class PropertyStorage(object):
         Example::
 
             {
-                "name": "Simulation name",
-                "value": "Great simulation",
+                "Simulation name": "Great simulation",
             }
 
     *Enumeration property*
@@ -256,8 +239,7 @@ class PropertyStorage(object):
             # ...
 
             {
-                "name": "Pressure coupling",
-                "value": CouplingType.Implicit,
+                "Pressure coupling": CouplingType.Implicit,
                 "attributes": {"enumNames": CouplingType.enumNames}
             }
     '''

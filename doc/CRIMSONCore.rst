@@ -12,9 +12,9 @@
 .. automodule:: CRIMSONCore.PropertyStorage
    :members:
 
-:mod:`CRIMSONCore.BoundaryCondition`
+:mod:`CRIMSONCore.FaceData`
 ====================================
-.. automodule:: CRIMSONCore.BoundaryCondition
+.. automodule:: CRIMSONCore.FaceData
    :members:
 
 :mod:`CRIMSONCore.SolutionStorage`

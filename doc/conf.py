@@ -20,12 +20,12 @@ import shlex
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.join(os.path.abspath('.'), os.pardir))
-import PythonQtMock as PythonQt
-sys.modules["PythonQt"] = PythonQt
+#import PythonQtMock as PythonQt
+#sys.modules["PythonQt"] = PythonQt
 
 import mock
  
-MOCK_MODULES = ['numpy']
+MOCK_MODULES = ['numpy', 'PythonQt', 'PythonQt.CRIMSON', 'PythonQt.QtCore', 'PythonQt.QtGui']
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()
 

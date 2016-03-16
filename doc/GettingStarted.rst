@@ -22,7 +22,7 @@ a useful module skeleton which can then be populated with functional code. To us
  - Edit the last line of ``createCRIMSONModule.py``, which is located in the directory you extracted CRIMSONModuleTemplate to,
    to specify the boundary condition, solver setup and solver study names you want the script to create for you. For example::
    
-        createCRIMSONModule('CRIMSONSolver', 'CRIMSONSolverSolverSetupManager', ['RCR', 'NoSlip'], ['SolverSetup3D'], ['CRIMSONStudy3D'])
+        createCRIMSONModule('CRIMSONSolver', 'CRIMSONSolverSolverSetupManager', ['RCR', 'NoSlip'], ['WallMaterial'], ['SolverSetup3D'], ['CRIMSONStudy3D'])
    
    Note, that the names should be valid python identifiers (e.g. they cannot contain any spaces)
    
