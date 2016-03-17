@@ -197,7 +197,11 @@ def upgradeScene(filename):
 </property>
 <property key="show empty data" type="BoolProperty">
     <bool value="true" />
-</property>''')
+</property>
+<property key="layer" type="IntProperty">
+    <int value="4096" />
+</property>
+''')
             indexXML.append(newElement)
             newSourceNodeUIDs[sourceNodeUID] = newUID
 
