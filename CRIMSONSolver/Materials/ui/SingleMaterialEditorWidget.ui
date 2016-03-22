@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
+    <width>647</width>
     <height>571</height>
    </rect>
   </property>
@@ -193,6 +193,15 @@
                </item>
                <item row="1" column="1">
                 <widget class="QComboBox" name="interpolationComboBox">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="toolTip">
+                  <string>Only linear interpolation is supported</string>
+                 </property>
+                 <property name="currentIndex">
+                  <number>1</number>
+                 </property>
                  <item>
                   <property name="text">
                    <string>Nearest neighbour</string>
@@ -219,6 +228,12 @@
                </item>
                <item row="2" column="1">
                 <widget class="QComboBox" name="extrapolationComboBox">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="toolTip">
+                  <string>Only constant extrapolation is supported</string>
+                 </property>
                  <item>
                   <property name="text">
                    <string>Constant</string>
@@ -414,17 +429,11 @@
      </layout>
      <zorder></zorder>
      <zorder>customMaterialFrame</zorder>
-     <zorder></zorder>
-     <zorder>customMaterialFrame</zorder>
     </widget>
    </item>
   </layout>
-  <zorder>frame</zorder>
-  <zorder>scriptTextEdit</zorder>
  </widget>
- <resources>
-  <include location="MaterialEditorResources.qrc"/>
- </resources>
+ <resources/>
  <connections>
   <connection>
    <sender>representationComboBox</sender>
