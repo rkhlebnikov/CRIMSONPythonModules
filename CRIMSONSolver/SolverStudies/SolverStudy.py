@@ -159,7 +159,7 @@ class SolverStudy(object):
             rawReader = PhastaSolverIO.PhastaRawFileReader(restartFile)
             dataBlocksToReplace = ['byteorder magic number']
             newFields = {}
-            for name, dataInfo in solutionStorage.arrays:
+            for name, dataInfo in solutionStorage.arrays.iteritems():
                 arrayDesc, fieldDesc = PhastaConfig.restartConfig.findDescriptorAndField(name)
                 if arrayDesc is None:
                     Utils.logWarning(
