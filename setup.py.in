@@ -9,7 +9,7 @@ setup(name='CRIMSON',
                 'CRIMSONSolver.BoundaryConditionSets',
                 'CRIMSONSolver.SolverSetupManagers',
                 'CRIMSONSolver.SolverSetups',
-                'CRIMSONSolver.SolverStudies'
+                'CRIMSONSolver.SolverStudies',
                 'CRIMSONSolver.Materials'
                 ],
       py_modules=['upgradeScene'],
