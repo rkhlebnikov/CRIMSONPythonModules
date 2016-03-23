@@ -10,6 +10,7 @@ setup(name='CRIMSON',
                 'CRIMSONSolver.SolverSetupManagers',
                 'CRIMSONSolver.SolverSetups',
                 'CRIMSONSolver.SolverStudies'
+                'CRIMSONSolver.Materials'
                 ],
       py_modules=['upgradeScene'],
       data_files = [('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies', ['CRIMSONSolver/SolverStudies/${presolver_executable_filename}',]),
