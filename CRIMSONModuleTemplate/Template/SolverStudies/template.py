@@ -8,7 +8,7 @@ from {{ModuleName}}.BoundaryConditions import ({{#BoundaryConditionNames}}{{name
 class {{ClassName}}(object):
     def __init__(self):
         self.meshNodeUID = ""
-        self.solverSetupNodeUID = ""
+        self.solverParametersNodeUID = ""
         self.boundaryConditionSetNodeUIDs = []
         self.materialNodeUIDs = []
 
@@ -18,11 +18,11 @@ class {{ClassName}}(object):
     def setMeshNodeUID(self, uid):
         self.meshNodeUID = uid
 
-    def getSolverSetupNodeUID(self):
-        return self.solverSetupNodeUID
+    def getSolverParametersNodeUID(self):
+        return self.solverParametersNodeUID
 
-    def setSolverSetupNodeUID(self, uid):
-        self.solverSetupNodeUID = uid
+    def setSolverParametersNodeUID(self, uid):
+        self.solverParametersNodeUID = uid
 
     def getBoundaryConditionSetNodeUIDs(self):
         return self.boundaryConditionSetNodeUIDs
@@ -40,7 +40,7 @@ class {{ClassName}}(object):
         # Implement if needed - see documentation
         pass
 
-    def writeSolverSetup(self, vesselForestData, solidModelData, meshData, solverSetup, boundaryConditions,
+    def writeSolverSetup(self, vesselForestData, solidModelData, meshData, solverParameters, boundaryConditions,
                          materials, vesselPathNames, solutionStorage):
         # Get the output folder 
         outputDir = QtGui.QFileDialog.getExistingDirectory(None, 'Select output folder')

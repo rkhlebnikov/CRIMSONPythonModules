@@ -8,10 +8,10 @@ setup(name='CRIMSON',
                 'CRIMSONSolver.BoundaryConditions',
                 'CRIMSONSolver.BoundaryConditionSets',
                 'CRIMSONSolver.SolverSetupManagers',
-                'CRIMSONSolver.SolverSetups',
+                'CRIMSONSolver.SolverParameters',
                 'CRIMSONSolver.SolverStudies'
                 ],
-      py_modules=['upgradeScene'],
+      py_modules=['upgradeScene', 'upgradeScene2'],
       data_files = [('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies', ['CRIMSONSolver/SolverStudies/${presolver_executable_filename}',]),
                     ('${python_lib_folder}site-packages/CRIMSONSolver/BoundaryConditions/ui', ['CRIMSONSolver/BoundaryConditions/ui/PrescribedVelocitiesBoundaryConditionEditorWidget.ui',])]
       )

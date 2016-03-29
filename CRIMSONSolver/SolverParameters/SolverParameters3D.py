@@ -8,7 +8,7 @@ class SolverType(object):
     enumNames = ["memLS", "acusim"]
     memLS, acusim = range(2)
 
-class SolverSetup3D(PropertyStorage):
+class SolverParameters3D(PropertyStorage):
     def __init__(self):
         PropertyStorage.__init__(self)
         self.properties = [
@@ -86,3 +86,6 @@ class SolverSetup3D(PropertyStorage):
                 ]
             },
         ]
+
+        
+SolverSetup3D = SolverParameters3D # To support loading scenes created before rename

@@ -1,10 +1,10 @@
 import BoundaryConditions
 import BoundaryConditionSets
-import SolverSetups
+import SolverParameters
 import SolverStudies
 import SolverSetupManagers
 
-__all__ = ['BoundaryConditions', 'BoundaryConditionSets', 'SolverSetups', 'SolverStudies',
+__all__ = ['BoundaryConditions', 'BoundaryConditionSets', 'SolverParameters', 'SolverStudies',
            'SolverSetupManagers']
 
 import inspect

@@ -15,7 +15,7 @@ def createFilesPerClass(moduleName, subDirName, mustacheData, classNames):
         processAndCopy(moduleName, subDirName, 'template.py', className + '.py', mustacheData)
     
 
-def createCRIMSONModule(moduleName, solverSetupManagerName, bcNames, materialNames, solverSetupNames, solverStudyNames, bcSetNames = ['BoundaryConditionSet']):
+def createCRIMSONModule(moduleName, solverSetupManagerName, bcNames, materialNames, solverParametersNames, solverStudyNames, bcSetNames = ['BoundaryConditionSet']):
     if os.path.exists(moduleName):
         shutil.rmtree(moduleName)
     os.mkdir(moduleName)
@@ -26,7 +26,7 @@ def createCRIMSONModule(moduleName, solverSetupManagerName, bcNames, materialNam
         'BoundaryConditionSetNames': [{'name': x} for x in bcSetNames],
         'BoundaryConditionNames': [{'name': x} for x in bcNames],
         'MaterialNames': [{'name': x} for x in materialNames],
-        'SolverSetupNames': [{'name': x} for x in solverSetupNames],
+        'SolverParametersNames': [{'name': x} for x in solverParametersNames],
         'SolverStudyNames': [{'name': x} for x in solverStudyNames]
     }
     
@@ -39,11 +39,11 @@ def createCRIMSONModule(moduleName, solverSetupManagerName, bcNames, materialNam
     createFilesPerClass(moduleName, 'BoundaryConditionSets', mustacheData, bcSetNames)
     createFilesPerClass(moduleName, 'BoundaryConditions', mustacheData, bcNames)
     createFilesPerClass(moduleName, 'Materials', mustacheData, materialNames)
-    createFilesPerClass(moduleName, 'SolverSetups', mustacheData, solverSetupNames)
+    createFilesPerClass(moduleName, 'SolverParameters', mustacheData, solverParametersNames)
     createFilesPerClass(moduleName, 'SolverStudies', mustacheData, solverStudyNames)
         
     
-createCRIMSONModule('MySolver', 'MySolverSetupManager', ['MyBC1', 'MyBC2'], ['MyMaterial'], ['MySolverSetup1', 'MySolverSetup2'], ['MyStudy1', 'MyStudy2'])
+createCRIMSONModule('MySolver', 'MySolverSetupManager', ['MyBC1', 'MyBC2'], ['MyMaterial'], ['MyParameters1', 'MyParameters2'], ['MyStudy1', 'MyStudy2'])
     
     
 

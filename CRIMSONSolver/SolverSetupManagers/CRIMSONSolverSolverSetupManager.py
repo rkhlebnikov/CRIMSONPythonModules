@@ -1,7 +1,7 @@
 from CRIMSONSolver.BoundaryConditionSets.BoundaryConditionSet import BoundaryConditionSet
 from CRIMSONSolver.BoundaryConditions import InitialPressure, NoSlip, PrescribedVelocities, RCR, ZeroPressure, \
     DeformableWall
-from CRIMSONSolver.SolverSetups.SolverSetup3D import SolverSetup3D
+from CRIMSONSolver.SolverParameters.SolverParameters3D import SolverParameters3D
 from CRIMSONSolver.SolverStudies.SolverStudy import SolverStudy
 from CRIMSONSolver.Materials import DeformableWallMaterial
 
@@ -11,7 +11,7 @@ class CRIMSONSolverSolverSetupManager(object):
 
     def __init__(self):
         self.boundaryConditionSetClasses = {"Boundary condition set": BoundaryConditionSet}
-        self.solverSetupClasses = {"Solver setup 3D": SolverSetup3D}
+        self.solverParametersClasses = {"Solver parameters 3D": SolverParameters3D}
         self.solverStudyClasses = {"Solver study 3D": SolverStudy}
         self.boundaryConditionClasses = {"Initial pressure": InitialPressure.InitialPressure,
                                          "No slip": NoSlip.NoSlip,
@@ -43,12 +43,12 @@ class CRIMSONSolverSolverSetupManager(object):
     def createMaterial(self, name):
         return self.materialClasses[name]()
 
-    # Solver setups
-    def getSolverSetupNames(self):
-        return self.solverSetupClasses.keys()
+    # Solver parameters
+    def getSolverParametersNames(self):
+        return self.solverParametersClasses.keys()
 
-    def createSolverSetupData(self, name):
-        return self.solverSetupClasses[name]()
+    def createSolverParametersData(self, name):
+        return self.solverParametersClasses[name]()
 
     # Solver studies
     def getSolverStudyNames(self):
