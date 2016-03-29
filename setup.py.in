@@ -14,5 +14,14 @@ setup(name='CRIMSON',
                 ],
       py_modules=['upgradeScene'],
       data_files = [('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies', ['CRIMSONSolver/SolverStudies/${presolver_executable_filename}',]),
-                    ('${python_lib_folder}site-packages/CRIMSONSolver/BoundaryConditions/ui', ['CRIMSONSolver/BoundaryConditions/ui/PrescribedVelocitiesBoundaryConditionEditorWidget.ui',])]
+                    ('${python_lib_folder}site-packages/CRIMSONSolver/BoundaryConditions/ui', ['CRIMSONSolver/BoundaryConditions/ui/PrescribedVelocitiesBoundaryConditionEditorWidget.ui',]),
+                    ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui', ['CRIMSONSolver/Materials/ui/MaterialEditorWidget.ui',]),
+                    ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui', ['CRIMSONSolver/Materials/ui/SingleMaterialEditorWidget.ui',]),
+                    ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/after.png',]),
+                    ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/before.png',]),
+                    ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/circle.png',]),
+                    ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/delete.png',]),
+                    ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/open.png',]),
+                    ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/save.png',]),
+                    ]
       )
