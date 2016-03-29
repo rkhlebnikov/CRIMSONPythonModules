@@ -9,7 +9,8 @@ setup(name='CRIMSON',
                 'CRIMSONSolver.BoundaryConditionSets',
                 'CRIMSONSolver.SolverSetupManagers',
                 'CRIMSONSolver.SolverParameters',
-                'CRIMSONSolver.SolverStudies'
+                'CRIMSONSolver.SolverStudies',
+                'CRIMSONSolver.Materials'
                 ],
       py_modules=['upgradeScene', 'upgradeScene2'],
       data_files = [('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies', ['CRIMSONSolver/SolverStudies/${presolver_executable_filename}',]),
