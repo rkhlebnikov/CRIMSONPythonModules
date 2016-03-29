@@ -36,8 +36,6 @@ class SolverStudy(object):
         self.meshNodeUID = uid
 
     def getSolverParametersNodeUID(self):
-        if 'solverParametersNodeUID' not in self.__dict__:
-            self.solverParametersNodeUID = self.solverSetupNodeUID # Support for old scenes
         return self.solverParametersNodeUID
 
     def setSolverParametersNodeUID(self, uid):

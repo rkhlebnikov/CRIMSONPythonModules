@@ -23,6 +23,8 @@ def upgradeScene2(filename):
         buffer = zin.read(zipInfo)
         if zipInfo.filename.endswith('pyssd'):
             buffer = buffer.replace('SolverSetups', 'SolverParameters').replace('SolverSetup3D', 'SolverParameters3D')
+        elif zipInfo.filename.endswith('pystudy'):
+            buffer = buffer.replace('solverSetupNodeUID', 'solverParametersNodeUID')
                 
         zout.writestr(zipInfo, buffer)
 

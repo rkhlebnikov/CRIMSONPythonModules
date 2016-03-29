@@ -86,6 +86,3 @@ class SolverParameters3D(PropertyStorage):
                 ]
             },
         ]
-
-        
-SolverSetup3D = SolverParameters3D # To support loading scenes created before rename
