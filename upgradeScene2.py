@@ -37,7 +37,7 @@ try:
     def upgradeScenes2():
         filenames = PythonQt.QtGui.QFileDialog.getOpenFileNames(None, "Select scenes to upgrade", "", "*.mitk")
         for filename in filenames:
-            upgradeScene(filename)
+            upgradeScene2(filename)
 except:
     pass
 
