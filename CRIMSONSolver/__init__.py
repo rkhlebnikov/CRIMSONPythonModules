@@ -5,8 +5,6 @@ import SolverParameters
 import SolverStudies
 import SolverSetupManagers
 
-SolverSetups = SolverParameters # To support loading scenes created before rename
-
 __all__ = ['BoundaryConditions', 'Materials', 'BoundaryConditionSets', 'SolverParameters', 'SolverStudies',
            'SolverSetupManagers']
 
