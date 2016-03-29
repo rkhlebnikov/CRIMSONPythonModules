@@ -1,11 +1,13 @@
 import BoundaryConditions
 import Materials
 import BoundaryConditionSets
-import SolverSetups
+import SolverParameters
 import SolverStudies
 import SolverSetupManagers
 
-__all__ = ['BoundaryConditions', 'Materials', 'BoundaryConditionSets', 'SolverSetups', 'SolverStudies',
+SolverSetups = SolverParameters # To support loading scenes created before rename
+
+__all__ = ['BoundaryConditions', 'Materials', 'BoundaryConditionSets', 'SolverParameters', 'SolverStudies',
            'SolverSetupManagers']
 
 import inspect

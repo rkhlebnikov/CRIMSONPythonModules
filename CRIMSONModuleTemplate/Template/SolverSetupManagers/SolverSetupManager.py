@@ -1,6 +1,6 @@
 from {{ModuleName}}.BoundaryConditionSets import ({{#BoundaryConditionSetNames}}{{name}}, {{/BoundaryConditionSetNames}})
 from {{ModuleName}}.BoundaryConditions import ({{#BoundaryConditionNames}}{{name}}, {{/BoundaryConditionNames}})
-from {{ModuleName}}.SolverSetups import ({{#SolverSetupNames}}{{name}}, {{/SolverSetupNames}})
+from {{ModuleName}}.SolverParameters import ({{#SolverParametersNames}}{{name}}, {{/SolverParametersNames}})
 from {{ModuleName}}.SolverStudies import ({{#SolverStudyNames}}{{name}}, {{/SolverStudyNames}})
 from {{ModuleName}}.Materials import ({{#MaterialNames}}{{name}}, {{/MaterialNames}})
 
@@ -14,10 +14,10 @@ class {{SolverSetupManagerName}}(object):
                 "{{name}}": {{name}}.{{name}},
             {{/BoundaryConditionSetNames}}
             }
-        self.solverSetupClasses = {
-            {{#SolverSetupNames}}
+        self.solverParametersClasses = {
+            {{#SolverParametersNames}}
                 "{{name}}": {{name}}.{{name}},
-            {{/SolverSetupNames}}
+            {{/SolverParametersNames}}
             }
         self.solverStudyClasses = {
             {{#SolverStudyNames}}
@@ -56,12 +56,12 @@ class {{SolverSetupManagerName}}(object):
     def createMaterial(self, name):
         return self.materialClasses[name]()
 
-    # Solver setups
-    def getSolverSetupNames(self):
-        return self.solverSetupClasses.keys()
+    # Solver parameters
+    def getSolverParametersNames(self):
+        return self.solverParametersClasses.keys()
 
-    def createSolverSetupData(self, name):
-        return self.solverSetupClasses[name]()
+    def createSolverParametersData(self, name):
+        return self.solverParametersClasses[name]()
 
     # Solver studies
     def getSolverStudyNames(self):

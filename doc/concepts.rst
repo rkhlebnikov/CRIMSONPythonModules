@@ -13,7 +13,7 @@ There are several basic concepts that CRIMSON uses to allow specification of the
 * Boundary condition
 * Boundary condition set
 * Material
-* Solver setup
+* Solver parameters
 * Solver study
 
 
@@ -24,7 +24,7 @@ Vessel tree
 
 A vessel tree contains the information about the vessels and which vessels form connected components.
 
-A vessel tree is passed to the ``setupSolver`` method of a solver study and has the following API:
+A vessel tree is passed to the ``writeSolverSetup`` method of a solver study and has the following API:
 
 ``getActiveConnectedComponentsMap()``
     Returns a ``dict`` object mapping from UIDs of vessels (as used by :mod:`face identifiers <CRIMSONCore.FaceIdentifier>`)
@@ -54,7 +54,7 @@ For example, in the image below, two physical faces in yellow share the same fac
 
 .. image:: images/face_identifiers.png
 
-A geometric model is passed to the ``setupSolver`` method of a solver study and has the following API:
+A geometric model is passed to the ``writeSolverSetup`` method of a solver study and has the following API:
 
 ``getModelFacesForFaceIdentifier(faceIdentifier)``
     Returns a list of model face indices that share the face identifier ``faceIdentifier``.
@@ -94,7 +94,7 @@ finite element simulation.
 
 A 3D simulation mesh consists of nodes (or vertices), edges, faces and elements.
 
-A simulation mesh is passed to the ``setupSolver`` method of a solver study and has the following API:
+A simulation mesh is passed to the ``writeSolverSetup`` method of a solver study and has the following API:
 
 ``getNNodes()``
     Returns the number of nodes in the mesh.
@@ -162,19 +162,19 @@ A solver setup manager class is expected to implement the following interface:
     Return an object of boundary condition class for the boundary condition type ``name``.
     ``name`` will be chosen from the list returned by ``getBoundaryConditionNames()``.
 
-``getSolverSetupNames()``
-    Return a list of strings containing the names of types of solver setups that the user can choose from.
+``getSolverParametersNames()``
+    Return a list of strings containing the names of types of solver parameters that the user can choose from.
 
-``createSolverSetup(name)``
-    Return an object of solver setup class for the solver setup type ``name``.
-    ``name`` will be chosen from the list returned by ``getSolverSetupNames()``.
+``createSolverParameters(name)``
+    Return an object of solver parameters class for the solver parameters type ``name``.
+    ``name`` will be chosen from the list returned by ``getSolverParametersNames()``.
 
 ``getSolverStudyNames()``
     Return a list of strings containing the names of types of solver studies that the user can choose from.
 
 ``createSolverStudy(name)``
     Return an object of solver study class for the solver study type ``name``.
-    ``name`` will be chosen from the list returned by ``getSolverSetupNames()``.
+    ``name`` will be chosen from the list returned by ``getSolverStudyNames()``.
 
 ``getMaterialNames()``
     Return a list of strings containing the names of types of materials that the user can choose from.
@@ -279,21 +279,21 @@ in the GUI. Thus, this class may be empty::
             pass
 
 
-.. _solver-setup:
+.. _solver-parameters:
 
-Solver setup
+Solver parameters
 ============
 
-Solver setup contains solver-specific values necessary to complete the simulation setup along with boundary conditions and the simulation mesh.
+Solver parameters data contains solver-specific values necessary to complete the simulation setup along with boundary conditions and the simulation mesh.
 For example, these may include the number and size of a time step for the simulation or the output configuration.
 
-It is recommended to inherit the specific solver setup classes from :mod:`CRIMSONCore.PropertyStorage`.
+It is recommended to inherit the specific solver parameters classes from :mod:`CRIMSONCore.PropertyStorage`.
 
-An example implementation of a solver setup::
+An example implementation of a solver parameters::
 
     from CRIMSONCore.PropertyStorage import PropertyStorage
 
-    class SimpleSolverSetup(PropertyStorage):
+    class SimpleSolverParameters(PropertyStorage):
     def __init__(self):
         PropertyStorage.__init__(self)
         self.properties = [
@@ -329,7 +329,7 @@ An example implementation of a solver setup::
 Solver study
 ============
 
-Solver study contains information about associated simulation mesh, one or more boundary condition sets, and a solver setup,
+Solver study contains information about associated simulation mesh, one or more boundary condition sets, solver parameters, and materials
 and is responsible for preparing the input files to be used by the solver.
 In addition, it is responsible for translating the resulting output of the simulation to the format used by CRIMSON.
 
@@ -341,25 +341,31 @@ A solver study class is expected to implement the following interface:
 ``getMeshNodeUID()``
     Return the stored node uid of the simulation mesh (``string``).
 
-``setSolverSetupNodeUID(uid)``
-    Store the node uid of the solver setup (``string``).
+``setSolverParametersNodeUID(uid)``
+    Store the node uid of the solver parameters (``string``).
 
-``getSolverSetupNodeUID()``
-    Return the stored node uid of the solver setup (``string``).
+``getSolverSetupParametersUID()``
+    Return the stored node uid of the solver parameters (``string``).
 
 ``setBoundaryConditionSetNodeUIDs(uids)``
     Store the node uids of the boundary condition sets (``list(string)``).
 
 ``getBoundaryConditionSetNodeUIDs()``
-    Return the stored node uids of the boundary condition sets (``list(strings)``).
+    Return the stored node uids of the boundary condition sets (``list(string)``).
 
-``writeSolverSetup(vesselTreeData, geometricModelData, meshData, solverSetup, boundaryConditions, vesselPathNames, solutionStorage)``
+``setMaterialNodeUIDs(uids)``
+    Store the node uids of the materials (``list(string)``).
+
+``getMaterialNodeUIDs()``
+    Return the stored node uids of the materials (``list(string)``).
+
+``writeSolverSetup(vesselTreeData, geometricModelData, meshData, solverParameters, boundaryConditions, vesselPathNames, solutionStorage)``
     Write the setup for the solver. The parameters are as follows:
 
     :``vesselTreeData``: a :ref:`vessel tree data <vessel-tree>` object (only present for models built in CRIMSON)
     :``geometricModelData``: a :ref:`geometric model data <geometric-model>` object.
     :``meshData``: a :ref:`simulation mesh data <simulation-mesh>` object.
-    :``solverSetup``: a :ref:`solver setup  <solver-setup>` object.
+    :``solverParameters``: a :ref:`solver parameters  <solver-parameters>` object.
     :``boundaryConditions``: a list of :ref:`boundary condition <boundary-condition>` objects.
     :``vesselPathNames``: a dictionary mapping the UID's used by :mod:`face identifiers <CRIMSONCore.FaceIdentifier>`
                           to the names that user has assigned to vessel paths that the user assigned in the GUI

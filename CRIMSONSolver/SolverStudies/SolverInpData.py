@@ -1,12 +1,12 @@
 from PythonQt.CRIMSON import FaceType
 from collections import OrderedDict
-from CRIMSONSolver.SolverSetups.SolverSetup3D import CouplingType, SolverType
+from CRIMSONSolver.SolverParameters.SolverParameters3D import CouplingType, SolverType
 
 __author__ = 'rk13'
 
 
 class SolverInpData():
-    def __init__(self, solverSetupData, faceIndicesAndFileNames):
+    def __init__(self, solverParametersData, faceIndicesAndFileNames):
         self.data = OrderedDict()
 
         getFaceIds = lambda cond: [str(faceIdAndName[0]) for faceIdentifier, faceIdAndName in
@@ -16,7 +16,7 @@ class SolverInpData():
         outputSurfaceIds = getFaceIds(lambda faceType: faceType != FaceType.ftWall)
         wallShearStressSurfaceIds = getFaceIds(lambda faceType: faceType == FaceType.ftWall)
 
-        props = solverSetupData.getProperties()
+        props = solverParametersData.getProperties()
 
         #############################################################################
         solutionControlGroup = self['SOLUTION CONTROL']

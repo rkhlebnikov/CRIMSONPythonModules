@@ -86,8 +86,8 @@ def upgradeZeroPressureBC(path, filename):
     return bc
 
 
-def upgradeSolverSetup(path, filename):
-    ss = CRIMSONSolver.SolverSetups.SolverSetup3D.SolverSetup3D()
+def upgradeSolverParameters(path, filename):
+    ss = CRIMSONSolver.SolverParameters.SolverParameters3D.SolverParameters3D()
     dom = parse(os.path.join(path, filename))
     extractProperties(dom, ss)
     return ss
@@ -98,7 +98,7 @@ def upgradeSolverStudy(path, filename):
     dom = parse(os.path.join(path, filename))
     ss.setMeshNodeUID(dom.getElementsByTagName('_meshNodeUID')[0].childNodes[0].data)
     ss.setBoundaryConditionSetNodeUIDs([dom.getElementsByTagName('_bcSetNodeUID')[0].childNodes[0].data])
-    ss.setSolverSetupNodeUID(dom.getElementsByTagName('_solverSetupNodeUID')[0].childNodes[0].data)
+    ss.setSolverParametersNodeUID(dom.getElementsByTagName('_solverSetupNodeUID')[0].childNodes[0].data)
 
     return ss
 
@@ -233,7 +233,7 @@ def upgradeScene(filename):
                 newExt = '.pybc'
 
             elif os.path.splitext(savedfilename)[1] == '.csssd':
-                result = upgradeSolverSetup(tempdir, savedfilename)
+                result = upgradeSolverParameters(tempdir, savedfilename)
                 newExt = '.pyssd'
 
             elif os.path.splitext(savedfilename)[1] == '.csstudy':

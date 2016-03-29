@@ -54,7 +54,7 @@ class PropertyAccessor(object):
 class PropertyStorage(object):
     '''
     The PropertyStorage class is a convenience class for communicating the various properties of a boundary condition
-    or a solver setup to the C++ code for the user to edit.
+    or solver parameters to the C++ code for the user to edit.
 
     The property is defined as a dictionary which must contain at least one string key with a value.
     The type of the property value is determined by the type of value itself::
@@ -98,12 +98,12 @@ class PropertyStorage(object):
     Group properties can also be nested.
 
     The ``PropertyStorage.properties`` is a top-level group which contains all the properties for a boundary condition or
-    a solver setup.
+    solver parameters.
 
     All the properties should be defined in the constructor of the class inheriting from ``PropertyStorage`` and cannot be
-    changed at run time. Here's a complete example of defining a solver setup with multiple grouped parameters::
+    changed at run time. Here's a complete example of defining a solver parameters with multiple grouped parameters::
 
-        class SolverSetup(PropertyStorage):
+        class SolverParameters(PropertyStorage):
         def __init__(self):
             PropertyStorage.__init__(self)
             self.properties = [

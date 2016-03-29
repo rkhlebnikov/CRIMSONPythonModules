@@ -25,7 +25,7 @@ from CRIMSONSolver.Materials import MaterialData
 class SolverStudy(object):
     def __init__(self):
         self.meshNodeUID = ""
-        self.solverSetupNodeUID = ""
+        self.solverParametersNodeUID = ""
         self.boundaryConditionSetNodeUIDs = []
         self.materialNodeUIDs = []
 
@@ -35,11 +35,13 @@ class SolverStudy(object):
     def setMeshNodeUID(self, uid):
         self.meshNodeUID = uid
 
-    def getSolverSetupNodeUID(self):
-        return self.solverSetupNodeUID
+    def getSolverParametersNodeUID(self):
+        if 'solverParametersNodeUID' not in self.__dict__:
+            self.solverParametersNodeUID = self.solverSetupNodeUID # Support for old scenes
+        return self.solverParametersNodeUID
 
-    def setSolverSetupNodeUID(self, uid):
-        self.solverSetupNodeUID = uid
+    def setSolverParametersNodeUID(self, uid):
+        self.solverParametersNodeUID = uid
 
     def getBoundaryConditionSetNodeUIDs(self):
         return self.boundaryConditionSetNodeUIDs
@@ -48,7 +50,9 @@ class SolverStudy(object):
         self.boundaryConditionSetNodeUIDs = uids
 
     def getMaterialNodeUIDs(self):
-        return self.materialNodeUIDs if 'materialNodeUIDs' in self.__dict__ else []  # Support for old scenes
+        if 'materialNodeUIDs' not in self.__dict__:
+            self.materialNodeUIDs = []  # Support for old scenes
+        return self.materialNodeUIDs  
 
     def setMaterialNodeUIDs(self, uids):
         self.materialNodeUIDs = uids
@@ -86,7 +90,7 @@ class SolverStudy(object):
 
         return solutions
 
-    def writeSolverSetup(self, vesselForestData, solidModelData, meshData, solverSetup, boundaryConditions,
+    def writeSolverSetup(self, vesselForestData, solidModelData, meshData, solverParameters, boundaryConditions,
                          materials, vesselPathNames, solutionStorage):
 
         outputDir = QtGui.QFileDialog.getExistingDirectory(None, 'Select output folder')
@@ -109,7 +113,7 @@ class SolverStudy(object):
 
         try:
             faceIndicesAndFileNames = self._computeFaceIndicesAndFileNames(solidModelData, vesselPathNames)
-            solverInpData = SolverInpData(solverSetup, faceIndicesAndFileNames)
+            solverInpData = SolverInpData(solverParameters, faceIndicesAndFileNames)
 
             supreFile = fileList[os.path.join('presolver', 'the.supre')]
 
