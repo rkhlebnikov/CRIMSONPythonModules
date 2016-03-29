@@ -60,12 +60,12 @@ class {{SolverSetupManagerName}}(object):
     def getSolverParametersNames(self):
         return self.solverParametersClasses.keys()
 
-    def createSolverParametersData(self, name):
+    def createSolverParameters(self, name):
         return self.solverParametersClasses[name]()
 
     # Solver studies
     def getSolverStudyNames(self):
         return self.solverStudyClasses.keys()
 
-    def createSolverStudyData(self, name):
+    def createSolverStudy(self, name):
         return self.solverStudyClasses[name]()
