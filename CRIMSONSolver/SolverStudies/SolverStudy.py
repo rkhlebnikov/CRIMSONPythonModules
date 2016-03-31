@@ -18,7 +18,7 @@ from CRIMSONSolver.SolverStudies.FileList import FileList
 from CRIMSONSolver.SolverStudies.SolverInpData import SolverInpData
 from CRIMSONSolver.SolverStudies.Timer import Timer
 from CRIMSONSolver.BoundaryConditions import NoSlip, InitialPressure, RCR, ZeroPressure, PrescribedVelocities, \
-    DeformableWall
+    DeformableWall, Netlist
 from CRIMSONSolver.Materials import MaterialData
 
 
@@ -338,6 +338,12 @@ class SolverStudy(object):
 
         rcrInfo = RCRInfo()
 
+        class NetlistInfo(object):
+            def __init__(self):
+                self.faceIds = []
+
+        netlistInfo = NetlistInfo()
+
         class BCTInfo(object):
             def __init__(self):
                 self.first = True
@@ -397,6 +403,22 @@ class SolverStudy(object):
                                    '0 0.0\n'
                                    '1.1 0.0\n'.format(bc.getProperties()))
                 supreFile.write('\n')
+
+            elif is_boundary_condition_type(bc, Netlist.Netlist):
+                faceInfoFile = fileList['faceInfo.dat']
+
+                for faceId in validFaceIdentifiers(bc):
+
+                    if bc.getProperties()['Heart model']:
+                        supreFile.write('prescribed_velocities {0}.ebc\n'.format(faceIndicesAndFileNames[faceId][1]))
+
+                    supreFile.write('zero_pressure {0}.ebc\n'.format(faceIndicesAndFileNames[faceId][1]))
+                    faceInfoFile.write('Netlist {0[0]} {0[1]}\n'.format(faceIndicesAndFileNames[faceId]))
+
+                    netlistInfo.faceIds.append(str(faceIndicesAndFileNames[faceId][0]))
+
+                supreFile.write('\n')
+
 
             elif is_boundary_condition_type(bc, ZeroPressure.ZeroPressure):
                 for faceId in validFaceIdentifiers(bc):
@@ -528,6 +550,12 @@ class SolverStudy(object):
             rcrGroup['RCR Values From File'] = True
             rcrGroup['Number of RCR Surfaces'] = len(rcrInfo.faceIds)
             rcrGroup['List of RCR Surfaces'] = ' '.join(rcrInfo.faceIds)
+
+        if len(netlistInfo.faceIds) > 0:
+            netlistGroup = solverInpData['CARDIOVASCULAR MODELING PARAMETERS: NETLIST LPNs']
+            netlistGroup['Number of Netlist LPN Surfaces'] = len(netlistInfo.faceIds)
+            netlistGroup['List of Netlist LPN Surfaces'] = ' '.join(netlistInfo.faceIds)
+
 
         if not bctInfo.first:
             bctInfo.totalPoints /= 2  # points counted twice for steady and non-steady output
