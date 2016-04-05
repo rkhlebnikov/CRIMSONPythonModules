@@ -344,6 +344,7 @@ class SolverStudy(object):
                 self.totalPoints = 0
                 self.maxNTimeSteps = 0
                 self.faceIds = []
+                self.period = 1.1 # for RCR
 
         bctInfo = BCTInfo()
 
@@ -359,8 +360,9 @@ class SolverStudy(object):
         # Processing priority for a particular BC type defines the order of processing the BCs
         # Default value is assumed to be 1. The higher the priority, the later the BC is processed
         bcProcessingPriorities = {
-            # Material.Material.__name__: 0,
-            DeformableWall.DeformableWall.__name__: 2}
+            RCR.RCR.__name__: 2, # Process RCR after PrescribedVelocities
+            DeformableWall.DeformableWall.__name__: 3 # Process deformable wall last
+            }
 
         bcCompare = lambda l, r: \
             cmp([bcProcessingPriorities.get(l.__class__.__name__, 1), l.__class__.__name__],
@@ -395,7 +397,7 @@ class SolverStudy(object):
                                    '{0[Capacitance]}\n'
                                    '{0[Distal resistance]}\n'
                                    '0 0.0\n'
-                                   '1.1 0.0\n'.format(bc.getProperties()))
+                                   '{1} 0.0\n'.format(bc.getProperties(), bctInfo.period))
                 supreFile.write('\n')
 
             elif is_boundary_condition_type(bc, ZeroPressure.ZeroPressure):
@@ -414,6 +416,11 @@ class SolverStudy(object):
                     emptyLine = ' ' * 50 + '\n'
                     bctFile.write(emptyLine)
                     bctSteadyFile.write(emptyLine)
+                    bctInfo.period = bc.originalWaveform[-1, 0] # Last time point
+                else:
+                    if abs(bc.originalWaveform[-1, 0] - bctInfo.period) > 1e-5:
+                        Utils.logWarning('Periods of waveforms used for prescribed velocities are different. RCR boundary conditions may be inconsistent - the period used is {0}'.format(bctInfo.period))
+                    
 
                 waveform = bc.smoothedWaveform
                 steadyWaveformValue = numpy.trapz(waveform[:, 1], x=waveform[:, 0]) / (waveform[-1, 0] - waveform[0, 0])
