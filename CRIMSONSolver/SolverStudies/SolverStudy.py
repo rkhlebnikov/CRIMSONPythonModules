@@ -419,6 +419,9 @@ class SolverStudy(object):
 
                 supreFile.write('\n')
 
+                if not bc.netlistSurfacesDat=='':
+                    fileList['netlist_surfaces.dat', 'wb'].write(bc.netlistSurfacesDat)
+
 
             elif is_boundary_condition_type(bc, ZeroPressure.ZeroPressure):
                 for faceId in validFaceIdentifiers(bc):
