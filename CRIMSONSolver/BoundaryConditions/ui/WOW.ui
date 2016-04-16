@@ -15,9 +15,33 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QPushButton" name="WOW">
+    <widget class="QTextBrowser" name="NetlistLoadedFileInfo">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="NetlistEditorLaunchWidget">
      <property name="text">
-      <string>WOW</string>
+      <string>Launch Netlist Editor</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="NetlistDescriptionLoaderWidget">
+     <property name="text">
+      <string>Load Netlist Circuit Description</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="NetlistDynamicAdjustmentLoaderWidget">
+     <property name="text">
+      <string>Load Dynamic Adjustment Python Script</string>
      </property>
     </widget>
    </item>

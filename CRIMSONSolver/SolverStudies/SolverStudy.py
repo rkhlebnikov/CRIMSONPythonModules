@@ -6,6 +6,7 @@ from collections import OrderedDict
 import numpy
 import math
 import operator
+import ntpath
 
 from PythonQt import QtGui
 from PythonQt.CRIMSON import FaceType
@@ -410,17 +411,30 @@ class SolverStudy(object):
                 for faceId in validFaceIdentifiers(bc):
 
                     if bc.getProperties()['Heart model']:
-                        supreFile.write('prescribed_velocities {0}.ebc\n'.format(faceIndicesAndFileNames[faceId][1]))
+                        supreFile.write('prescribed_velocities {0}.nbc\n'.format(faceIndicesAndFileNames[faceId][1]))
+                        faceInfoFile.write('Netlist Heart {0[0]} {0[1]}\n'.format(faceIndicesAndFileNames[faceId]))
+                    else:
+                        faceInfoFile.write('Netlist {0[0]} {0[1]}\n'.format(faceIndicesAndFileNames[faceId]))
+
+                    if not bc.netlistSurfacesDat == '':
+                        fileList['netlist_surfaces.dat', 'wb'].write(bc.netlistSurfacesDat)
+                    else:
+                        Utils.logWarning('No circuit file was specified for the Netlist at surface  \'{0}\'.'.format(faceIndicesAndFileNames[faceId][0]))
+
+                    dynamicAdjustmentScriptFileNamesAndContents = bc.getCircuitDynamicAdjustmentFiles()
+                    for dynamicAdjustmentScriptName in dynamicAdjustmentScriptFileNamesAndContents:
+                        fileContentsToWrite = dynamicAdjustmentScriptFileNamesAndContents[dynamicAdjustmentScriptName]
+                        nameOfFileToWrite = ntpath.basename(dynamicAdjustmentScriptName)
+                        fileList[nameOfFileToWrite, 'wb'].write(fileContentsToWrite)
+
 
                     supreFile.write('zero_pressure {0}.ebc\n'.format(faceIndicesAndFileNames[faceId][1]))
-                    faceInfoFile.write('Netlist {0[0]} {0[1]}\n'.format(faceIndicesAndFileNames[faceId]))
 
                     netlistInfo.faceIds.append(str(faceIndicesAndFileNames[faceId][0]))
 
                 supreFile.write('\n')
 
-                if not bc.netlistSurfacesDat=='':
-                    fileList['netlist_surfaces.dat', 'wb'].write(bc.netlistSurfacesDat)
+
 
 
             elif is_boundary_condition_type(bc, ZeroPressure.ZeroPressure):
