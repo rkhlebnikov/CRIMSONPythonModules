@@ -11,8 +11,12 @@ class MaterialBase(FaceData):
         self.materialDatas = []
         self.editor = None
 
-    # Call this function after filling the properties
     def fillMaterialData(self):
+        """
+        Automatically fill the self.materialDatas with MaterialData objects.
+        MaterialData objects are created according to self.properties.
+        Subclasses should call this function after filling the properties.
+        """
         for property in self.properties:
             name, valueKey = PropertyAccessor.getNameAndValueKey(property)
             value = property[valueKey]

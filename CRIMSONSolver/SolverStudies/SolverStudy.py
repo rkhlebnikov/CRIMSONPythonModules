@@ -309,6 +309,10 @@ class SolverStudy(object):
             solverInpFile.write('# }\n')
 
     def _validateBoundaryConditions(self, boundaryConditions):
+        if len(boundaryConditions) == 0:
+            Utils.logError('Cannot write CRIMSON solver setup without any boundary conditions selected')
+            return False
+    
         # Check unique BC's
         bcByType = {}
         for bc in boundaryConditions:
