@@ -20,6 +20,9 @@ class FileList(object):
             self.openFiles[name] = open(os.path.join(self.folder, name), openmode)
         return self.openFiles[name]
 
+    def isOpen(self, fileName):
+        return self.openFiles.__contains__(fileName)
+
     def close(self):
         for _, f in self.openFiles.iteritems():
             f.close()
