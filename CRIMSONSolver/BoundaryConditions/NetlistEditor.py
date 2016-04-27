@@ -16,9 +16,10 @@ except:
 else:
 
     class NetlistFileTypes(object):
-        CircuitDescriptionDat = 1
-        DynamicAdjustmentPython = 2
-        AdditionalData = 3
+        CircuitDescriptionDat = 'Netlist circuit'
+        DynamicAdjustmentPython = 'Dynamic adjustment script'
+        AdditionalData = 'Additional data'
+
 
     class SiblingAndParentLayoutDeletingButton(QtGui.QPushButton):
         def __init__(self, buttonText, sibling):
@@ -31,6 +32,7 @@ else:
             # width = self.fontMetrics().boundingRectangle(buttonText).width() + 10
             # self.setMaximumWidth(width)
             # minimum, preferred, expanding
+
         def deleteParentAndSibling(self):
             self.sibling.setParent(None)
             self.parent().layout().removeItem(self.parent().layout())
@@ -38,62 +40,41 @@ else:
 
 
     class NetlistEditor(object):
-        def __init__(self, Netlist):
-            self.Netlist = Netlist
-            uiFileName = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                      "ui", "WOW.ui")
+        def __init__(self, netlistBC):
+            self.netlistBC = netlistBC
 
-            self.ui = QtUiTools.QUiLoader().load(QtCore.QFile(str(uiFileName)))
+            uiPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui")
+            uiFileName = os.path.join(uiPath, "NetlistBCEditorWidget.ui")
 
-            self.netlistEditorLaunchButton = self.ui.findChild(PythonQt.QtCore.QObject, "NetlistEditorLaunchWidget")
-            self.netlistEditorLaunchButton.connect('clicked(bool)', self.netlistEditorLaunchButtonPressed)
+            l = QtUiTools.QUiLoader()
+            l.setWorkingDirectory(QtCore.QDir(uiPath))
+            self.ui = l.load(QtCore.QFile(str(uiFileName)))
 
-            self.netlistLoadFileButton = self.ui.findChild(PythonQt.QtCore.QObject, "NetlistDescriptionLoaderWidget")
-            self.netlistLoadFileButton.connect('clicked(bool)', self.netlistLoadFileButtonPressed)
+            netlistEditorLaunchButton = self.ui.findChild(PythonQt.QtCore.QObject, "launchEditorButton")
+            netlistEditorLaunchButton.connect('clicked(bool)', self.launchEditor)
 
-            self.netlistLoadScriptButton = self.ui.findChild(PythonQt.QtCore.QObject, "NetlistDynamicAdjustmentLoaderWidget")
-            self.netlistLoadScriptButton.connect('clicked(bool)', self.netlistLoadDynamicAdjusterScriptButtonPressed)
+            netlistLoadFileButton = self.ui.findChild(PythonQt.QtCore.QObject, "loadCircuitButton")
+            netlistLoadFileButton.connect('clicked(bool)', self.loadCircuit)
 
-            self.netlistLoadAdditionalDatFileButton = self.ui.findChild(PythonQt.QtCore.QObject, "NetlistAdditionalDataLoaderWidget")
-            self.netlistLoadAdditionalDatFileButton.connect('clicked(bool)', self.netlistLoadAdditionalDatFileButtonPressed)
+            netlistLoadScriptButton = self.ui.findChild(PythonQt.QtCore.QObject, "loadAdjustmentScriptButton")
+            netlistLoadScriptButton.connect('clicked(bool)', self.loadAdjustmentScript)
 
-            self.fileContentsViewer = self.ui.findChild(PythonQt.QtCore.QObject, "NetlistLoadedFileInfo")
-            self.fileContentsViewer.setText('Loaded configuration will be displayed here.')
+            netlistLoadAdditionalDatFileButton = self.ui.findChild(PythonQt.QtCore.QObject, "loadDataFileButton")
+            netlistLoadAdditionalDatFileButton.connect('clicked(bool)', self.loadAdditionalDatFile)
+
+            removeButton = self.ui.findChild(PythonQt.QtCore.QObject, "removeButton")
+            removeButton.connect('clicked(bool)', self.removeSelected)
+
+            self.fileContentsViewer = self.ui.findChild(PythonQt.QtCore.QObject, "scriptContestTextEdit")
+            self.scriptListTable = self.ui.findChild(PythonQt.QtCore.QObject, "scriptListTable")
+            self.scriptListTable.connect('currentCellChanged(int, int, int, int)', self.showContents)
 
             self.recreateSavedState()
 
         def getEditorWidget(self):
             return self.ui
 
-        def netlistLoadFileButtonPressed(self):
-            fileName = self.getDatFileName("Load Netlist circuit description")
-            if not fileName:
-                return
-            success = self.loadNetlistFile(fileName)
-            if success:
-                self.assimilateCircuitDescriptionFile(fileName)
-
-        def assimilateCircuitDescriptionFile(self, fileName):
-            removerButtonTrigger = self.addLoadedFileInfoToGui(fileName, NetlistFileTypes.CircuitDescriptionDat)
-            self.Netlist.setCircuitDescriptionFileRemover(removerButtonTrigger)
-
-        def netlistLoadDynamicAdjusterScriptButtonPressed(self):
-            fileName = self.getPyFileName()
-            if not fileName:
-                return
-            nowAddFileToGui = self.loadNetlistDynamicAdjusterFile(fileName)
-            if nowAddFileToGui:
-                self.addLoadedFileInfoToGui(fileName, NetlistFileTypes.DynamicAdjustmentPython)
-
-        def netlistLoadAdditionalDatFileButtonPressed(self):
-            fileName = self.getAdditionalDatFileName()
-            if not fileName:
-                return
-            nowAddFileToGui = self.loadNetlistAdditionalDatFile(fileName)
-            if nowAddFileToGui:
-                self.addLoadedFileInfoToGui(fileName, NetlistFileTypes.AdditionalData)
-
-        def netlistEditorLaunchButtonPressed(self):
+        def launchEditor(self):
             # netlistEditorExecutablePathWithoutExtension = PythonQt.Qt.QApplication.applicationDirPath() + '\\CRIMSONBCT'
             # # for different operating systems:
             # if os.path.isfile(netlistEditorExecutablePathWithoutExtension):
@@ -105,98 +86,117 @@ else:
             subprocess.call(['D:\\Dev\\QSapecNG-CrimsonBCT-Git\\CrimsonBctGit\\bin\\Debug\\RUN_CRIMSONBCT.bat'])
             print "WARNING TO DEVS - call to CRIMSON Netlist Editor is in debug mode!"
 
-        def loadNetlistFile(self, fileName):
-            success = False
-            with open(fileName, 'r') as inputFile:
-                netlistSurfacesDat = inputFile.read()
-                self.Netlist.addCircuitFile(fileName, netlistSurfacesDat)
-                self.fileContentsViewer.setText(netlistSurfacesDat)
-                success = True
+        def loadCircuit(self):
+            fileName = self.getDatFileName("Load Netlist circuit description")
+            if not fileName:
+                return
+            if self.loadNetlistFile(fileName):
+                # Find the netlist description file row in the table
+                for row in xrange(self.scriptListTable.rowCount):
+                    if self.scriptListTable.item(row, 0).text() == NetlistFileTypes.CircuitDescriptionDat:
+                        self.scriptListTable.removeRow(row)
+                        break
+                self.addLoadedFileInfoToTable(fileName, NetlistFileTypes.CircuitDescriptionDat)
 
-            return success
+        def loadAdjustmentScript(self):
+            fileName = self.getPyFileName()
+            if not fileName:
+                return
+            nowAddFileToGui = self.loadNetlistDynamicAdjusterFile(fileName)
+            if nowAddFileToGui:
+                self.addLoadedFileInfoToTable(fileName, NetlistFileTypes.DynamicAdjustmentPython)
+
+        def loadAdditionalDatFile(self):
+            fileName = self.getAdditionalDatFileName()
+            if not fileName:
+                return
+            if self.loadNetlistAdditionalDatFile(fileName):
+                self.addLoadedFileInfoToTable(fileName, NetlistFileTypes.AdditionalData)
+
+        def loadNetlistFile(self, fileName):
+            try:
+                with open(fileName, 'r') as inputFile:
+                    netlistSurfacesDat = inputFile.read()
+                    self.netlistBC.addCircuitFile(fileName, netlistSurfacesDat)
+                    return True
+            except:
+                return False
 
         def loadNetlistDynamicAdjusterFile(self, fileName):
-            nowAddFileToGui = False
-            with open(fileName, 'r') as inputFile:
-                dynamicAdjusterScriptContents = inputFile.read()
-                overwroteFileInternally = self.Netlist.addDynamicAdjusterFile(fileName, dynamicAdjusterScriptContents)
-                self.fileContentsViewer.setText(dynamicAdjusterScriptContents)
-                nowAddFileToGui = not overwroteFileInternally
-            return nowAddFileToGui
+            try:
+                with open(fileName, 'r') as inputFile:
+                    dynamicAdjusterScriptContents = inputFile.read()
+                    overwroteFileInternally = self.netlistBC.addDynamicAdjusterFile(fileName,
+                                                                                    dynamicAdjusterScriptContents)
+                    return not overwroteFileInternally
+            except:
+                return False
 
         def loadNetlistAdditionalDatFile(self, fileName):
-            nowAddFileToGui = False
-            with open(fileName, 'r') as inputFile:
-                additionalDatFileContents = inputFile.read()
-                overwroteFileInternally = self.Netlist.addAdditionalDataFile(fileName, additionalDatFileContents)
-                self.fileContentsViewer.setText(additionalDatFileContents)
-                nowAddFileToGui = not overwroteFileInternally
-            return nowAddFileToGui
+            try:
+                with open(fileName, 'r') as inputFile:
+                    additionalDatFileContents = inputFile.read()
+                    overwroteFileInternally = self.netlistBC.addAdditionalDataFile(fileName, additionalDatFileContents)
+                    return not overwroteFileInternally
+            except:
+                return False
 
-        def addLoadedFileInfoToGui(self, fileName, fileType):
-            horizontalLayout = QtGui.QHBoxLayout()
-            # self.ui.layout().addWidget()
-            viewLoadedFileButton = QtGui.QPushButton(fileName)
-
-            displayFileContents = lambda : self.fileContentsViewer.setText(self.Netlist.getFile(fileName))
-            viewLoadedFileButton.connect('clicked(bool)', displayFileContents)
-            viewLoadedFileButton.setToolTip('Click to view this file')
-            viewLoadedFileButton.setSizePolicy(QtGui.QSizePolicy.Maximum, QtGui.QSizePolicy.Preferred)
-            horizontalLayout.addWidget(viewLoadedFileButton)
-
-            removerButton = SiblingAndParentLayoutDeletingButton('Remove', viewLoadedFileButton)
-            removerButton.connect('clicked(bool)', self.clearFileContentsViewer)
-            removerButton.connect('clicked(bool)', lambda : self.Netlist.removeFile(fileName))
-
-            horizontalLayout.addWidget(removerButton)
-
-            if fileType == NetlistFileTypes.CircuitDescriptionDat:
-                parentLayoutForFileInfo = self.ui.findChild(PythonQt.QtCore.QObject, "LayoutCircuitDescription")
-            elif fileType == NetlistFileTypes.DynamicAdjustmentPython:
-                parentLayoutForFileInfo = self.ui.findChild(PythonQt.QtCore.QObject, "LayoutPythonScripts")
-            elif fileType == NetlistFileTypes.AdditionalData:
-                parentLayoutForFileInfo = self.ui.findChild(PythonQt.QtCore.QObject, "LayoutDataFiles")
-            else:
-                Utils.logWarning('Unknown NetlistFileType \'{0}\'. Skipping.'.format(fileType))
-                parentLayoutForFileInfo = self.ui.layout()
-
-            parentLayoutForFileInfo.addLayout(horizontalLayout)
-
-            removerButtonProgramaticTrigger = lambda : removerButton.click()
-            return removerButtonProgramaticTrigger
+        def addLoadedFileInfoToTable(self, fileName, scriptType, selectNewRow = True):
+            self.scriptListTable.setSortingEnabled(False)
+            row = self.scriptListTable.rowCount
+            self.scriptListTable.insertRow(row)
+            self.scriptListTable.setItem(row, 0, PythonQt.QtGui.QTableWidgetItem(scriptType))
+            self.scriptListTable.setItem(row, 1, PythonQt.QtGui.QTableWidgetItem(fileName))
+            if selectNewRow:
+                self.scriptListTable.selectRow(row)
+                self.scriptListTable.setCurrentCell(row, 0)
+                self.showContents(row) # Force update
+            self.scriptListTable.setSortingEnabled(True)
 
         def getDatFileName(self, dialogTitle):
             return PythonQt.QtGui.QFileDialog.getOpenFileName(self.ui, dialogTitle, "",
-                                                                  "Netlist Circuit Description (*.dat);; All files (*.*)")
+                                                              "Netlist Circuit Description (*.dat);; All files (*.*)")
 
         def getPyFileName(self):
-            fileName =  PythonQt.QtGui.QFileDialog.getOpenFileName(self.ui, "Load dynamic adjustment Python script", "",
-                                                              "Dynamic Adjustment Script (*.py);; All files (*.*)")
-            if self.Netlist.getCircuitDynamicAdjustmentFiles().__contains__(fileName):
+            fileName = PythonQt.QtGui.QFileDialog.getOpenFileName(self.ui, "Load dynamic adjustment Python script", "",
+                                                                  "Dynamic Adjustment Script (*.py);; All files (*.*)")
+            if self.netlistBC.getCircuitDynamicAdjustmentFiles().__contains__(fileName):
                 dialogResult = PythonQt.QtGui.QMessageBox.warning(self.ui, "File Already Loaded",
-                                                           "This file has already been loaded. Overwrite?",
-                                                           PythonQt.QtGui.QMessageBox.Ok,
-                                                           PythonQt.QtGui.QMessageBox.Cancel)
+                                                                  "This file has already been loaded. Overwrite?",
+                                                                  PythonQt.QtGui.QMessageBox.Ok,
+                                                                  PythonQt.QtGui.QMessageBox.Cancel)
                 if dialogResult == PythonQt.QtGui.QMessageBox.Cancel:
                     return None
             return fileName
 
         def getAdditionalDatFileName(self):
             fileName = PythonQt.QtGui.QFileDialog.getOpenFileName(self.ui, "Load additional data file", "",
-                                                              "Additional Data File (*.dat);; All files (*.*)")
-            if self.Netlist.getCircuitAdditionalDataFiles().__contains__(fileName):
-                dialogResult = PythonQt.QtGui.QMessageBox.warning(self.ui, "File Already Loaded", "This file has already been loaded. Overwrite?", PythonQt.QtGui.QMessageBox.Ok, PythonQt.QtGui.QMessageBox.Cancel)
+                                                                  "Additional Data File (*.dat);; All files (*.*)")
+            if self.netlistBC.getCircuitAdditionalDataFiles().__contains__(fileName):
+                dialogResult = PythonQt.QtGui.QMessageBox.warning(self.ui, "File Already Loaded",
+                                                                  "This file has already been loaded. Overwrite?",
+                                                                  PythonQt.QtGui.QMessageBox.Ok,
+                                                                  PythonQt.QtGui.QMessageBox.Cancel)
                 if dialogResult == PythonQt.QtGui.QMessageBox.Cancel:
                     return None
             return fileName
 
-        def clearFileContentsViewer(self):
-            self.fileContentsViewer.setText('')
+        def showContents(self, row):
+            if row >= 0:
+                self.fileContentsViewer.setText(self.netlistBC.getFile(self.scriptListTable.item(row, 1).text()))
+            else:
+                self.fileContentsViewer.setText('')
+
+        def removeSelected(self):
+            persistentIndices = [PythonQt.QtCore.QPersistentModelIndex(x) for x in self.scriptListTable.selectionModel().selectedRows()]
+            for index in persistentIndices:
+                self.netlistBC.removeFile(self.scriptListTable.item(index.row(), 1).text())
+                self.scriptListTable.removeRow(index.row())
 
         def recreateSavedState(self):
-            if self.Netlist.getNetlistCircuitFileName() != '':
-                self.assimilateCircuitDescriptionFile(self.Netlist.getNetlistCircuitFileName())
-            for dynamicAdjustmentFileName in self.Netlist.getCircuitDynamicAdjustmentFiles():
-                self.addLoadedFileInfoToGui(dynamicAdjustmentFileName, NetlistFileTypes.DynamicAdjustmentPython)
-            for additionalDatFile in self.Netlist.getCircuitAdditionalDataFiles():
-                self.addLoadedFileInfoToGui(additionalDatFile, NetlistFileTypes.AdditionalData)
+            if self.netlistBC.getNetlistCircuitFileName():
+               self.addLoadedFileInfoToTable(self.netlistBC.getNetlistCircuitFileName(), NetlistFileTypes.CircuitDescriptionDat, False)
+            for dynamicAdjustmentFileName in self.netlistBC.getCircuitDynamicAdjustmentFiles():
+               self.addLoadedFileInfoToTable(dynamicAdjustmentFileName, NetlistFileTypes.DynamicAdjustmentPython, False)
+            for additionalDatFile in self.netlistBC.getCircuitAdditionalDataFiles():
+               self.addLoadedFileInfoToTable(additionalDatFile, NetlistFileTypes.AdditionalData, False)

@@ -69,12 +69,12 @@ class Netlist(FaceData):
         return self.netlistSurfacesDatFileName
 
     def removeFile(self, fileName):
-        if self.circuitDynamicAdjustmentFiles.__contains__(fileName):
+        if fileName in self.circuitDynamicAdjustmentFiles:
             del self.circuitDynamicAdjustmentFiles[fileName]
         elif self.netlistSurfacesDatFileName == fileName:
             self.netlistSurfacesDat = ''
             self.netlistSurfacesDatFileName = ''
-        elif self.circuitAdditionalDataFiles.__contains__(fileName):
+        elif fileName in self.circuitAdditionalDataFiles:
             del self.circuitAdditionalDataFiles[fileName]
         else:
             # error: unknown file. should never reach here.
