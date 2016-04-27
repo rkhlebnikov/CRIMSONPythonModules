@@ -75,16 +75,17 @@ else:
             return self.ui
 
         def launchEditor(self):
-            # netlistEditorExecutablePathWithoutExtension = PythonQt.Qt.QApplication.applicationDirPath() + '\\CRIMSONBCT'
-            # # for different operating systems:
-            # if os.path.isfile(netlistEditorExecutablePathWithoutExtension):
-            #     executablePathToRun = netlistEditorExecutablePathWithoutExtension
-            # else:
-            #     executablePathToRun = netlistEditorExecutablePathWithoutExtension + '.exe'
-            # print executablePathToRun
-            # subprocess.call([executablePathToRun])
-            subprocess.call(['D:\\Dev\\QSapecNG-CrimsonBCT-Git\\CrimsonBctGit\\bin\\Debug\\RUN_CRIMSONBCT.bat'])
-            print "WARNING TO DEVS - call to CRIMSON Netlist Editor is in debug mode!"
+            netlistEditorExecutablePathWithoutExtension = PythonQt.Qt.QApplication.applicationDirPath() + '\\CRIMSONBCT'
+            # for different operating systems:
+            if os.path.isfile(netlistEditorExecutablePathWithoutExtension):
+                executablePathToRun = netlistEditorExecutablePathWithoutExtension
+            else:
+                executablePathToRun = netlistEditorExecutablePathWithoutExtension + '.exe'
+            print executablePathToRun
+            subprocess.call([executablePathToRun])
+            
+            #subprocess.call(['D:\\Dev\\QSapecNG-CrimsonBCT-Git\\CrimsonBctGit\\bin\\Debug\\RUN_CRIMSONBCT.bat'])
+            #print "WARNING TO DEVS - call to CRIMSON Netlist Editor is in debug mode!"
 
         def loadCircuit(self):
             fileName = self.getDatFileName("Load Netlist circuit description")
