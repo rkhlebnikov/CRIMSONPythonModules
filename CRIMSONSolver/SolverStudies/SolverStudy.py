@@ -417,6 +417,7 @@ class SolverStudy(object):
                         faceInfoFile.write('Netlist {0[0]} {0[1]}\n'.format(faceIndicesAndFileNames[faceId]))
 
                     if not bc.netlistSurfacesDat == '':
+                        Utils.logInformation('Writing to file \'{0}\''.format('netlist_surfaces.dat'))
                         fileList['netlist_surfaces.dat', 'wb'].write(bc.netlistSurfacesDat)
                     else:
                         Utils.logWarning('No circuit file was specified for the Netlist at surface  \'{0}\'.'.format(faceIndicesAndFileNames[faceId][0]))
@@ -425,6 +426,18 @@ class SolverStudy(object):
                     for dynamicAdjustmentScriptName in dynamicAdjustmentScriptFileNamesAndContents:
                         fileContentsToWrite = dynamicAdjustmentScriptFileNamesAndContents[dynamicAdjustmentScriptName]
                         nameOfFileToWrite = ntpath.basename(dynamicAdjustmentScriptName)
+                        Utils.logInformation('Writing file \'{0}\''.format(nameOfFileToWrite))
+                        if fileList.isOpen(nameOfFileToWrite):
+                            Utils.logWarning('File with name \'{0}\' occurs multiple times in solver setup. Overwriting. This is ok if all copies should be identical'.format(nameOfFileToWrite))
+                        fileList[nameOfFileToWrite, 'wb'].write(fileContentsToWrite)
+
+                    additionalDataFileNamesAndContents = bc.getCircuitAdditionalDataFiles()
+                    for additionalDataFileName in additionalDataFileNamesAndContents:
+                        fileContentsToWrite = additionalDataFileNamesAndContents[additionalDataFileName]
+                        nameOfFileToWrite = ntpath.basename(additionalDataFileName)
+                        Utils.logInformation('Writing file \'{0}\''.format(nameOfFileToWrite))
+                        if fileList.isOpen(nameOfFileToWrite):
+                            Utils.logWarning('File with name \'{0}\' occurs multiple times in solver setup. Overwriting. This is ok if all copies should be identical'.format(nameOfFileToWrite))
                         fileList[nameOfFileToWrite, 'wb'].write(fileContentsToWrite)
 
 
@@ -562,17 +575,29 @@ class SolverStudy(object):
 
 
         # Finalize
-        if not rcrInfo.first:
+        if len(rcrInfo.faceIds) > 0:
             rcrGroup = solverInpData['CARDIOVASCULAR MODELING PARAMETERS: RCR']
-            rcrGroup['RCR Values From File'] = True
-            rcrGroup['Number of RCR Surfaces'] = len(rcrInfo.faceIds)
-            rcrGroup['List of RCR Surfaces'] = ' '.join(rcrInfo.faceIds)
+
+            rcrValuesFromFileKey = 'RCR Values From File'
+            numberOfRCRSurfacesKey = 'Number of RCR Surfaces'
+            listOfRCRSurfacesKey = 'List of RCR Surfaces'
+
+            if len(netlistInfo.faceIds) > 0:
+                rcrValuesFromFileKey = 'experimental RCR Values From File'
+                numberOfRCRSurfacesKey = 'Number of experimental RCR Surfaces'
+                listOfRCRSurfacesKey = 'List of experimental RCR Surfaces'
+
+            rcrGroup[rcrValuesFromFileKey] = True
+            rcrGroup[numberOfRCRSurfacesKey] = len(rcrInfo.faceIds)
+            rcrGroup[listOfRCRSurfacesKey] = ' '.join(rcrInfo.faceIds)
 
         if len(netlistInfo.faceIds) > 0:
             netlistGroup = solverInpData['CARDIOVASCULAR MODELING PARAMETERS: NETLIST LPNs']
             netlistGroup['Number of Netlist LPN Surfaces'] = len(netlistInfo.faceIds)
             netlistGroup['List of Netlist LPN Surfaces'] = ' '.join(netlistInfo.faceIds)
 
+            multidomainFile = fileList['multidomain.dat']
+            multidomainFile.write('#\n{0}\n#\n0\n'.format(0 if len(rcrInfo.faceIds) == 0 else 1))
 
         if not bctInfo.first:
             bctInfo.totalPoints /= 2  # points counted twice for steady and non-steady output
