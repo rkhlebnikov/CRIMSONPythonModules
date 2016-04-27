@@ -1,6 +1,7 @@
 from CRIMSONCore.FaceData import FaceData
 from PythonQt.CRIMSON import FaceType
 from CRIMSONSolver.BoundaryConditions.NetlistEditor import NetlistEditor
+from PythonQt.CRIMSON import Utils
 
 class Netlist(FaceData):
     unique = False
@@ -20,6 +21,7 @@ class Netlist(FaceData):
         self.netlistSurfacesDatFileName = ''
         self.netlistSurfacesDat = ''
         self.circuitDynamicAdjustmentFiles = {}
+        self.circuitAdditionalDataFiles = {}
         self.circuitDescriptionFileRemover = None
 
     def createCustomEditorWidget(self):
@@ -28,7 +30,14 @@ class Netlist(FaceData):
         return self.editor.getEditorWidget()
 
     def addDynamicAdjusterFile(self, fileName, fileContents):
+        fileNameWasAlreadyKnown = self.circuitDynamicAdjustmentFiles.__contains__(fileName)
         self.circuitDynamicAdjustmentFiles[fileName] = fileContents
+        return fileNameWasAlreadyKnown
+
+    def addAdditionalDataFile(self, fileName, fileContents):
+        fileNameWasAlreadyKnown = self.circuitAdditionalDataFiles.__contains__(fileName)
+        self.circuitAdditionalDataFiles[fileName] = fileContents
+        return fileNameWasAlreadyKnown
 
     def addCircuitFile(self, fileName, fileContents):
         if self.circuitDescriptionFileRemover:
@@ -41,8 +50,11 @@ class Netlist(FaceData):
             fileContents = self.circuitDynamicAdjustmentFiles[fileName]
         elif self.netlistSurfacesDatFileName == fileName:
             fileContents = self.netlistSurfacesDat
+        elif self.circuitAdditionalDataFiles. __contains__(fileName):
+            fileContents = self.circuitAdditionalDataFiles[fileName]
         else:
             # error: unknown file. should never reach here.
+            Utils.logWarning('Attempted to process unknown file \'{0}\'. Skipping.'.format(fileName))
             fileContents = None
 
         return fileContents
@@ -50,19 +62,23 @@ class Netlist(FaceData):
     def getCircuitDynamicAdjustmentFiles(self):
         return self.circuitDynamicAdjustmentFiles
 
+    def getCircuitAdditionalDataFiles(self):
+        return self.circuitAdditionalDataFiles
+
     def getNetlistCircuitFileName(self):
         return self.netlistSurfacesDatFileName
 
     def removeFile(self, fileName):
         if self.circuitDynamicAdjustmentFiles.__contains__(fileName):
             del self.circuitDynamicAdjustmentFiles[fileName]
-            print "removeFile 1 in Netlist.py: " + fileName
         elif self.netlistSurfacesDatFileName == fileName:
             self.netlistSurfacesDat = ''
             self.netlistSurfacesDatFileName = ''
-            print "removeFile 2 in Netlist.py: " + fileName
+        elif self.circuitAdditionalDataFiles.__contains__(fileName):
+            del self.circuitAdditionalDataFiles[fileName]
         else:
-            print "No such file to remove: " + fileName
+            # error: unknown file. should never reach here.
+            Utils.logWarning('Attempted to remove unknown file \'{0}\'. Skipping.'.format(fileName))
 
     def setCircuitDescriptionFileRemover(self, fileRemover):
         self.circuitDescriptionFileRemover = fileRemover

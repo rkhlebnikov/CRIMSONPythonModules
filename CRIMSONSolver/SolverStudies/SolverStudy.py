@@ -417,6 +417,7 @@ class SolverStudy(object):
                         faceInfoFile.write('Netlist {0[0]} {0[1]}\n'.format(faceIndicesAndFileNames[faceId]))
 
                     if not bc.netlistSurfacesDat == '':
+                        Utils.logInformation('Writing to file \'{0}\''.format('netlist_surfaces.dat'))
                         fileList['netlist_surfaces.dat', 'wb'].write(bc.netlistSurfacesDat)
                     else:
                         Utils.logWarning('No circuit file was specified for the Netlist at surface  \'{0}\'.'.format(faceIndicesAndFileNames[faceId][0]))
@@ -425,6 +426,18 @@ class SolverStudy(object):
                     for dynamicAdjustmentScriptName in dynamicAdjustmentScriptFileNamesAndContents:
                         fileContentsToWrite = dynamicAdjustmentScriptFileNamesAndContents[dynamicAdjustmentScriptName]
                         nameOfFileToWrite = ntpath.basename(dynamicAdjustmentScriptName)
+                        Utils.logInformation('Writing file \'{0}\''.format(nameOfFileToWrite))
+                        if fileList.isOpen(nameOfFileToWrite):
+                            Utils.logWarning('File with name \'{0}\' occurs multiple times in solver setup. Overwriting. This is ok if all copies should be identical'.format(nameOfFileToWrite))
+                        fileList[nameOfFileToWrite, 'wb'].write(fileContentsToWrite)
+
+                    additionalDataFileNamesAndContents = bc.getCircuitAdditionalDataFiles()
+                    for additionalDataFileName in additionalDataFileNamesAndContents:
+                        fileContentsToWrite = additionalDataFileNamesAndContents[additionalDataFileName]
+                        nameOfFileToWrite = ntpath.basename(additionalDataFileName)
+                        Utils.logInformation('Writing file \'{0}\''.format(nameOfFileToWrite))
+                        if fileList.isOpen(nameOfFileToWrite):
+                            Utils.logWarning('File with name \'{0}\' occurs multiple times in solver setup. Overwriting. This is ok if all copies should be identical'.format(nameOfFileToWrite))
                         fileList[nameOfFileToWrite, 'wb'].write(fileContentsToWrite)
 
 
