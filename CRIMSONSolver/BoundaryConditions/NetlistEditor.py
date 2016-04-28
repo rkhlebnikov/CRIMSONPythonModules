@@ -75,7 +75,7 @@ else:
             return self.ui
 
         def launchEditor(self):
-            netlistEditorExecutablePathWithoutExtension = os.path.join(PythonQt.Qt.QApplication.applicationDirPath(), + 'CRIMSONBCT')
+            netlistEditorExecutablePathWithoutExtension = os.path.join(PythonQt.Qt.QApplication.applicationDirPath(), 'CRIMSONBCT')
             # for different operating systems:
             if os.path.isfile(netlistEditorExecutablePathWithoutExtension):
                 executablePathToRun = netlistEditorExecutablePathWithoutExtension
