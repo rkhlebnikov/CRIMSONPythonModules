@@ -82,7 +82,7 @@ else:
             else:
                 executablePathToRun = netlistEditorExecutablePathWithoutExtension + '.exe'
             print executablePathToRun
-            subprocess.call([executablePathToRun])
+            subprocess.Popen([executablePathToRun])
             
             #subprocess.call(['D:\\Dev\\QSapecNG-CrimsonBCT-Git\\CrimsonBctGit\\bin\\Debug\\RUN_CRIMSONBCT.bat'])
             #print "WARNING TO DEVS - call to CRIMSON Netlist Editor is in debug mode!"
