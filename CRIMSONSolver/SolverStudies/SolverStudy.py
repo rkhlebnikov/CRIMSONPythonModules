@@ -661,7 +661,7 @@ class SolverStudy(object):
                 (vesselPathNames.get(vesselPathUID, vesselPathUID).replace(' ', '_') for vesselPathUID in
                  faceIdentifier.parentSolidIndices))]
 
-        faceTypePriority = {FaceType.ftWall: 1, FaceType.ftCapInflow: 2, FaceType.ftCapOutflow: 3}
+        faceTypePriority = {FaceType.ftCapInflow: 1, FaceType.ftCapOutflow: 2, FaceType.ftWall: 3}
 
         def compareWithPriority(l, r):
             if l[0].faceType != r[0].faceType:
