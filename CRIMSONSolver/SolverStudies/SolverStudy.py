@@ -7,6 +7,7 @@ import numpy
 import math
 import operator
 import ntpath
+import stat
 
 from PythonQt import QtGui
 from PythonQt.CRIMSON import FaceType
@@ -193,6 +194,8 @@ class SolverStudy(object):
         presolverExecutable = os.path.normpath(os.path.join(os.path.realpath(__file__), os.pardir,
                                            PresolverExecutableName.getPresolverExecutableName()))
         Utils.logInformation('Running presolver from ' + presolverExecutable)
+        
+        os.chmod(presolverExecutable, os.stat(presolverExecutable).st_mode | stat.S_IEXEC)
 
         supreDir, supreFileName = os.path.split(supreFile)
         p = subprocess.Popen([presolverExecutable, supreFileName], cwd=supreDir,
