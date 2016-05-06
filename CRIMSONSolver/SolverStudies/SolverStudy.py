@@ -190,8 +190,8 @@ class SolverStudy(object):
         shutil.copy(tempFileName, restartFileName)
 
     def _runPresolver(self, supreFile, outputDir, outputFiles):
-        presolverExecutable = os.path.join(os.path.realpath(__file__), os.pardir,
-                                           PresolverExecutableName.getPresolverExecutableName())
+        presolverExecutable = os.path.normpath(os.path.join(os.path.realpath(__file__), os.pardir,
+                                           PresolverExecutableName.getPresolverExecutableName()))
         Utils.logInformation('Running presolver from ' + presolverExecutable)
 
         supreDir, supreFileName = os.path.split(supreFile)
