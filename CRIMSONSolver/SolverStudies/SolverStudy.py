@@ -241,7 +241,7 @@ class SolverStudy(object):
             for adjacentId in meshData.getAdjacentElements(i):
                 outFileAdjacency.write('{0}\n'.format(adjacentId))
 
-        outFileAdjacency.seek(len(xadjString) + 1)  # +1 for potential \r
+        outFileAdjacency.seek(len(xadjString) + len(os.linesep) - 1)  # +1 for potential \r
         outFileAdjacency.write('adjncy: {0}'.format(curIndex))
 
     def _writeConnectivity(self, meshData, fileList):
