@@ -208,7 +208,7 @@ class SolverStudy(object):
         try:
             Utils.logInformation("Moving output files to output folder")
             for fName in outputFiles:
-                fullName = os.path.join(supreFile, os.path.pardir, fName)
+                fullName = os.path.normpath(os.path.join(supreFile, os.path.pardir, fName))
                 shutil.copy(fullName, outputDir)
                 os.remove(fullName)
         except Exception as e:
