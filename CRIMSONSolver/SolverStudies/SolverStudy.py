@@ -52,7 +52,7 @@ class SolverStudy(object):
     def getMaterialNodeUIDs(self):
         if 'materialNodeUIDs' not in self.__dict__:
             self.materialNodeUIDs = []  # Support for old scenes
-        return self.materialNodeUIDs  
+        return self.materialNodeUIDs
 
     def setMaterialNodeUIDs(self, uids):
         self.materialNodeUIDs = uids
@@ -194,7 +194,7 @@ class SolverStudy(object):
         presolverExecutable = os.path.normpath(os.path.join(os.path.realpath(__file__), os.pardir,
                                            PresolverExecutableName.getPresolverExecutableName()))
         Utils.logInformation('Running presolver from ' + presolverExecutable)
-        
+
         os.chmod(presolverExecutable, os.stat(presolverExecutable).st_mode | stat.S_IEXEC)
 
         supreDir, supreFileName = os.path.split(supreFile)
@@ -316,7 +316,7 @@ class SolverStudy(object):
         if len(boundaryConditions) == 0:
             Utils.logError('Cannot write CRIMSON solver setup without any boundary conditions selected')
             return False
-    
+
         # Check unique BC's
         bcByType = {}
         for bc in boundaryConditions:
@@ -479,7 +479,7 @@ class SolverStudy(object):
                 else:
                     if abs(bc.originalWaveform[-1, 0] - bctInfo.period) > 1e-5:
                         Utils.logWarning('Periods of waveforms used for prescribed velocities are different. RCR boundary conditions may be inconsistent - the period used is {0}'.format(bctInfo.period))
-                    
+
 
                 waveform = bc.smoothedWaveform
                 steadyWaveformValue = numpy.trapz(waveform[:, 1], x=waveform[:, 0]) / (waveform[-1, 0] - waveform[0, 0])
@@ -684,15 +684,55 @@ class SolverStudy(object):
     #
     #        return center / 3
 
-    def _getFaceCenter(self, faceInfo, meshData):
-        center = meshData.getNodeCoordinates(faceInfo[2])
-        center = map(operator.add, center, meshData.getNodeCoordinates(faceInfo[3]))
-        center = map(operator.add, center, meshData.getNodeCoordinates(faceInfo[4]))
+    # A helper class providing lazily-evaluated quantities for material computation
+    class MaterialFaceInfo(object):
+        def __init__(self, vesselForestData, meshData, faceIdentifier, meshFaceInfoData):
+            self.vesselForestData = vesselForestData
+            self.meshData = meshData
+            self.meshFaceInfoData = meshFaceInfoData
+            self.faceIdentifier = faceIdentifier
 
-        for i in xrange(3):
-            center[i] /= 3
+        def getMeshFaceInfo(self):
+            return self.meshFaceInfoData
 
-        return center
+        def getFaceCenter(self):
+            if 'center' not in self.__dict__:
+                self.center = self.meshData.getNodeCoordinates(self.meshFaceInfoData[2])
+                self.center = map(operator.add, self.center, self.meshData.getNodeCoordinates(self.meshFaceInfoData[3]))
+                self.center = map(operator.add, self.center, self.meshData.getNodeCoordinates(self.meshFaceInfoData[4]))
+
+                for i in xrange(3):
+                    self.center[i] /= 3
+
+            return self.center
+
+        def getLocalRadius(self):
+            if 'localRadius' not in self.__dict__:
+                self._computeLocalRadiusAndArcLength()
+
+            return self.localRadius
+
+        def getArcLength(self):
+            if 'arcLength' not in self.__dict__:
+                self._computeLocalRadiusAndArcLength()
+
+            return self.arcLength
+
+        def getVesselPathCoordinateFrame(self):
+            if 'vesselPathCoordinateFrame' not in self.__dict__:
+                faceCenter = self.getFaceCenter()
+                self.vesselPathCoordinateFrame = \
+                    self.vesselForestData.getVesselPathCoordinateFrame(self.faceIdentifier, faceCenter[0], faceCenter[1], faceCenter[2]) \
+                        if self.vesselForestData is not None else []
+
+        def _computeLocalRadiusAndArcLength(self):
+            faceCenter = self.getFaceCenter()
+            self.localRadius, self.arcLength = \
+                self.vesselForestData.getClosestPoint(self.faceIdentifier, faceCenter[0], faceCenter[1], faceCenter[2]) \
+                    if self.vesselForestData is not None else (0, 0)
+
+
+
 
     # Compute materials and return them in form of SolutionStorage
     def computeMaterials(self, materials, vesselForestData, solidModelData, meshData):
@@ -727,29 +767,26 @@ class SolverStudy(object):
                     for faceId in validFaceIdentifiers(m):
                         constantValue = getMaterialConstantValue(materialData)
                         for info in meshData.getMeshFaceInfoForFace(faceId):
-                            center = self._getFaceCenter(info, meshData)
-                            distance, arc_length = vesselForestData.getClosestPoint(faceId, center[0], center[1],
-                                                                                    center[2]) \
-                                if vesselForestData is not None else (0, 0)
+                            materialFaceInfo = SolverStudy.MaterialFaceInfo(vesselForestData, meshData, faceId, info)
 
                             if materialData.representation == MaterialData.RepresentationType.Constant:
                                 value = constantValue
                             elif materialData.representation == MaterialData.RepresentationType.Table:
                                 if materialData.tableData.inputVariableType == MaterialData.InputVariableType.DistanceAlongPath:
-                                    x = arc_length
+                                    x = materialFaceInfo.getArcLength()
                                 elif materialData.tableData.inputVariableType == MaterialData.InputVariableType.LocalRadius:
-                                    x = distance
+                                    x = materialFaceInfo.getLocalRadius()
                                 elif materialData.tableData.inputVariableType == MaterialData.InputVariableType.x:
-                                    x = center[0]
+                                    x = materialFaceInfo.getFaceCenter()[0]
                                 elif materialData.tableData.inputVariableType == MaterialData.InputVariableType.y:
-                                    x = center[1]
+                                    x = materialFaceInfo.getFaceCenter()[1]
                                 elif materialData.tableData.inputVariableType == MaterialData.InputVariableType.z:
-                                    x = center[2]
+                                    x = materialFaceInfo.getFaceCenter()[2]
 
                                 value = [numpy.interp(x, tableData[0], tableData[component])
                                          for component in xrange(1, materialData.nComponents + 1)]
                             elif materialData.representation == MaterialData.RepresentationType.Script:
-                                value = computeMaterialValue(arc_length, distance, center[0], center[1], center[2])
+                                value = computeMaterialValue(materialFaceInfo)
 
                             solutionStorage.arrays[materialData.name].data[info[1]] = value
                             #

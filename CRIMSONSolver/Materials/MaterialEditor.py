@@ -36,6 +36,8 @@ else:
             self.highlighter = PythonHighlighter.PythonHighlighter(self.scriptTextEditor)
             self.scriptTextEditor.setText(materialData.scriptData)
             self.scriptTextEditor.connect('textChanged()', self.saveScriptText)
+            self.helpButton = findChild("helpButton")
+            self.helpButton.connect('clicked(bool)', self.showHelpTooltip)
 
             self.inputVariableComboBox = findChild("inputVariableComboBox")
             self.inputVariableComboBox.setCurrentIndex(self.materialData.tableData.inputVariableType)
@@ -198,6 +200,9 @@ else:
         ################################################################################
         def saveScriptText(self):
             self.materialData.scriptData = self.scriptTextEditor.toPlainText()
+
+        def showHelpTooltip(self):
+            QtGui.QToolTip.showText(self.helpButton.mapToGlobal(QtCore.QPoint(0, 0)), self.helpButton.toolTip)
 
     class MaterialEditor(object):
         def __init__(self, materials):

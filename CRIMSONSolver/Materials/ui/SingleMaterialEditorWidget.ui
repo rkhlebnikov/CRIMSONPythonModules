@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>647</width>
+    <width>864</width>
     <height>571</height>
    </rect>
   </property>
@@ -142,7 +142,7 @@
             <enum>QFrame::Box</enum>
            </property>
            <property name="currentIndex">
-            <number>0</number>
+            <number>1</number>
            </property>
            <widget class="QWidget" name="page_2">
             <layout class="QVBoxLayout" name="verticalLayout_6">
@@ -159,12 +159,12 @@
                 <widget class="QComboBox" name="inputVariableComboBox">
                  <item>
                   <property name="text">
-                   <string>Position along vessel (d)</string>
+                   <string>Arc length (position along vessel path)</string>
                   </property>
                  </item>
                  <item>
                   <property name="text">
-                   <string>Local radius (r)</string>
+                   <string>Local radius</string>
                   </property>
                  </item>
                  <item>
@@ -391,7 +391,7 @@
             </layout>
            </widget>
            <widget class="QWidget" name="page_3">
-            <layout class="QVBoxLayout" name="verticalLayout_2">
+            <layout class="QVBoxLayout" name="verticalLayout">
              <property name="leftMargin">
               <number>0</number>
              </property>
@@ -411,6 +411,9 @@
                  <family>Courier New</family>
                 </font>
                </property>
+               <property name="toolTip">
+                <string/>
+               </property>
                <property name="lineWrapMode">
                 <enum>QTextEdit::NoWrap</enum>
                </property>
@@ -418,6 +421,33 @@
                 <number>20</number>
                </property>
               </widget>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_4">
+               <item>
+                <spacer name="horizontalSpacer_2">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item>
+                <widget class="QPushButton" name="helpButton">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;To define a material using a custom script, a function &lt;span style=&quot; font-weight:600;&quot;&gt;computeMaterialValue(info)&lt;/span&gt; should be defined.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;You can use the &lt;span style=&quot; font-weight:600;&quot;&gt;import&lt;/span&gt; statement before the function definition.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The return value of the function depends on the number of components in the material. If the material has a single component, the return value should be a single &lt;span style=&quot; font-weight:600;&quot;&gt;float&lt;/span&gt;. If material has multiple components, the return value should be a &lt;span style=&quot; font-weight:600;&quot;&gt;list&lt;/span&gt; of &lt;span style=&quot; font-weight:600;&quot;&gt;float&lt;/span&gt;s with number of elements equal to the number of components.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The &lt;span style=&quot; font-weight:600;&quot;&gt;info &lt;/span&gt;parameter is an object containing the information about the mesh face for which the material value should be computed. It has the following functions:&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt; - &lt;span style=&quot; font-weight:600;&quot;&gt;getArcLength()&lt;/span&gt; - returns the position along the closest vessel path.&lt;/p&gt;&lt;p&gt; - &lt;span style=&quot; font-weight:600;&quot;&gt;getLocalRadius()&lt;/span&gt; - returns the distance to the closest vessel path.&lt;/p&gt;&lt;p&gt; - &lt;span style=&quot; font-weight:600;&quot;&gt;getFaceCenter()&lt;/span&gt; - returns the position of the center of the mesh face.&lt;/p&gt;&lt;p&gt; - &lt;span style=&quot; font-weight:600;&quot;&gt;getVesselPathCoordinateFrame()&lt;/span&gt; - returns the coordinate frame defined by the closest vessel path. It is a list containing 9 values. The first 3 of them are the coordinates of the closest point. The second 3 are the tangent vector at the closest point. The last 3 are the normal vector at the closest point. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                 <property name="text">
+                  <string>Help</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </item>
             </layout>
            </widget>
