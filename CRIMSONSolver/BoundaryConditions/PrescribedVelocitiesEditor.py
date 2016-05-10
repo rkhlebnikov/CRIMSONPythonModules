@@ -167,6 +167,7 @@ else:
             self.numberOfSamplesSpinBox.value = nSamples
             self.smoothnessSlider.maximum = self._findLastNonZeroCoef()[0]
             self.smoothnessSlider.value = firstFilteredCoef
+            self._computeSmoothedWaveform()
 
         def _computeSmoothedWaveform(self):
             self.prescribedVelocitiesBC.firstFilteredCoef = self.smoothnessSlider.value
