@@ -24,6 +24,65 @@ from CRIMSONSolver.BoundaryConditions import NoSlip, InitialPressure, RCR, ZeroP
 from CRIMSONSolver.Materials import MaterialData
 
 
+# A helper class providing lazily-evaluated quantities for material computation
+class MaterialFaceInfo(object):
+    def __init__(self, vesselForestData, meshData, faceIdentifier, meshFaceInfoData):
+        self.vesselForestData = vesselForestData
+        self.meshData = meshData
+        self.meshFaceInfoData = meshFaceInfoData
+        self.faceIdentifier = faceIdentifier
+
+    def getMeshFaceInfo(self):
+        return self.meshFaceInfoData
+
+    def getFaceCenter(self):
+        if 'center' not in self.__dict__:
+            self.center = self.meshData.getNodeCoordinates(self.meshFaceInfoData[2])
+            self.center = map(operator.add, self.center, self.meshData.getNodeCoordinates(self.meshFaceInfoData[3]))
+            self.center = map(operator.add, self.center, self.meshData.getNodeCoordinates(self.meshFaceInfoData[4]))
+
+            for i in xrange(3):
+                self.center[i] /= 3
+
+        return self.center
+
+    #    This version is actually slower than getFaceCenter()
+    #    def getFaceCenter2(self, faceInfo, meshData):
+    #        center = numpy.array(meshData.getNodeCoordinates(faceInfo[2]))
+    #        numpy.add(center, meshData.getNodeCoordinates(faceInfo[3]), center)
+    #        numpy.add(center, meshData.getNodeCoordinates(faceInfo[4]), center)
+    #
+    #        return center / 3
+
+    def getLocalRadius(self):
+        if 'localRadius' not in self.__dict__:
+            self._computeLocalRadiusAndArcLength()
+
+        return self.localRadius
+
+    def getArcLength(self):
+        if 'arcLength' not in self.__dict__:
+            self._computeLocalRadiusAndArcLength()
+
+        return self.arcLength
+
+    def getVesselPathCoordinateFrame(self):
+        if 'vesselPathCoordinateFrame' not in self.__dict__:
+            faceCenter = self.getFaceCenter()
+            self.vesselPathCoordinateFrame = \
+                self.vesselForestData.getVesselPathCoordinateFrame(self.faceIdentifier, faceCenter[0], faceCenter[1],
+                                                                   faceCenter[2]) \
+                    if self.vesselForestData is not None else []
+
+        return self.vesselPathCoordinateFrame
+
+    def _computeLocalRadiusAndArcLength(self):
+        faceCenter = self.getFaceCenter()
+        self.localRadius, self.arcLength = \
+            self.vesselForestData.getClosestPoint(self.faceIdentifier, faceCenter[0], faceCenter[1], faceCenter[2]) \
+                if self.vesselForestData is not None else (0, 0)
+
+
 class SolverStudy(object):
     def __init__(self):
         self.meshNodeUID = ""
@@ -192,7 +251,7 @@ class SolverStudy(object):
 
     def _runPresolver(self, supreFile, outputDir, outputFiles):
         presolverExecutable = os.path.normpath(os.path.join(os.path.realpath(__file__), os.pardir,
-                                           PresolverExecutableName.getPresolverExecutableName()))
+                                                            PresolverExecutableName.getPresolverExecutableName()))
         Utils.logInformation('Running presolver from ' + presolverExecutable)
 
         os.chmod(presolverExecutable, os.stat(presolverExecutable).st_mode | stat.S_IEXEC)
@@ -358,7 +417,7 @@ class SolverStudy(object):
                 self.totalPoints = 0
                 self.maxNTimeSteps = 0
                 self.faceIds = []
-                self.period = 1.1 # for RCR
+                self.period = 1.1  # for RCR
 
         bctInfo = BCTInfo()
 
@@ -374,9 +433,9 @@ class SolverStudy(object):
         # Processing priority for a particular BC type defines the order of processing the BCs
         # Default value is assumed to be 1. The higher the priority, the later the BC is processed
         bcProcessingPriorities = {
-            RCR.RCR.__name__: 2, # Process RCR after PrescribedVelocities
-            DeformableWall.DeformableWall.__name__: 3 # Process deformable wall last
-            }
+            RCR.RCR.__name__: 2,  # Process RCR after PrescribedVelocities
+            DeformableWall.DeformableWall.__name__: 3  # Process deformable wall last
+        }
 
         bcCompare = lambda l, r: \
             cmp([bcProcessingPriorities.get(l.__class__.__name__, 1), l.__class__.__name__],
@@ -429,7 +488,8 @@ class SolverStudy(object):
                         Utils.logInformation('Writing to file \'{0}\''.format('netlist_surfaces.dat'))
                         fileList['netlist_surfaces.dat', 'wb'].write(bc.netlistSurfacesDat)
                     else:
-                        Utils.logWarning('No circuit file was specified for the Netlist at surface  \'{0}\'.'.format(faceIndicesAndFileNames[faceId][0]))
+                        Utils.logWarning('No circuit file was specified for the Netlist at surface  \'{0}\'.'.format(
+                            faceIndicesAndFileNames[faceId][0]))
 
                     dynamicAdjustmentScriptFileNamesAndContents = bc.getCircuitDynamicAdjustmentFiles()
                     for dynamicAdjustmentScriptName in dynamicAdjustmentScriptFileNamesAndContents:
@@ -437,7 +497,9 @@ class SolverStudy(object):
                         nameOfFileToWrite = ntpath.basename(dynamicAdjustmentScriptName)
                         Utils.logInformation('Writing file \'{0}\''.format(nameOfFileToWrite))
                         if fileList.isOpen(nameOfFileToWrite):
-                            Utils.logWarning('File with name \'{0}\' occurs multiple times in solver setup. Overwriting. This is ok if all copies should be identical'.format(nameOfFileToWrite))
+                            Utils.logWarning(
+                                'File with name \'{0}\' occurs multiple times in solver setup. Overwriting. This is ok if all copies should be identical'.format(
+                                    nameOfFileToWrite))
                         fileList[nameOfFileToWrite, 'wb'].write(fileContentsToWrite)
 
                     additionalDataFileNamesAndContents = bc.getCircuitAdditionalDataFiles()
@@ -446,9 +508,10 @@ class SolverStudy(object):
                         nameOfFileToWrite = ntpath.basename(additionalDataFileName)
                         Utils.logInformation('Writing file \'{0}\''.format(nameOfFileToWrite))
                         if fileList.isOpen(nameOfFileToWrite):
-                            Utils.logWarning('File with name \'{0}\' occurs multiple times in solver setup. Overwriting. This is ok if all copies should be identical'.format(nameOfFileToWrite))
+                            Utils.logWarning(
+                                'File with name \'{0}\' occurs multiple times in solver setup. Overwriting. This is ok if all copies should be identical'.format(
+                                    nameOfFileToWrite))
                         fileList[nameOfFileToWrite, 'wb'].write(fileContentsToWrite)
-
 
                     supreFile.write('zero_pressure {0}.ebc\n'.format(faceIndicesAndFileNames[faceId][1]))
 
@@ -475,11 +538,12 @@ class SolverStudy(object):
                     emptyLine = ' ' * 50 + '\n'
                     bctFile.write(emptyLine)
                     bctSteadyFile.write(emptyLine)
-                    bctInfo.period = bc.originalWaveform[-1, 0] # Last time point
+                    bctInfo.period = bc.originalWaveform[-1, 0]  # Last time point
                 else:
                     if abs(bc.originalWaveform[-1, 0] - bctInfo.period) > 1e-5:
-                        Utils.logWarning('Periods of waveforms used for prescribed velocities are different. RCR boundary conditions may be inconsistent - the period used is {0}'.format(bctInfo.period))
-
+                        Utils.logWarning(
+                            'Periods of waveforms used for prescribed velocities are different. RCR boundary conditions may be inconsistent - the period used is {0}'.format(
+                                bctInfo.period))
 
                 waveform = bc.smoothedWaveform
                 steadyWaveformValue = numpy.trapz(waveform[:, 1], x=waveform[:, 0]) / (waveform[-1, 0] - waveform[0, 0])
@@ -523,7 +587,6 @@ class SolverStudy(object):
 
                 supreFile.write('deformable_wall deformable_wall.ebc\n')
                 supreFile.write('fix_free_edge_nodes deformable_wall.ebc\n')
-                supreFile.write('number_of_wall_Props 10\n')
                 supreFile.write('deformable_create_mesh deformable_wall.ebc\n')
                 supreFile.write('deformable_write_feap inputdataformatlab.dat\n')
                 supreFile.write('deformable_pressure {0}\n'.format(initialPressure))
@@ -531,7 +594,6 @@ class SolverStudy(object):
                 supreFile.write('deformable_nuvw {0}\n'.format(bc.getProperties()["Poisson ratio"]))
                 supreFile.write('deformable_thickness {0}\n'.format(bc.getProperties()["Thickness"]))
                 supreFile.write('deformable_kcons {0}\n'.format(shearConstant))
-                supreFile.write('deformable_solve\n\n')
 
                 deformableGroup = solverInpData['DEFORMABLE WALL PARAMETERS']
                 deformableGroup['Deformable Wall'] = True
@@ -540,7 +602,6 @@ class SolverStudy(object):
                 deformableGroup['Young Mod of Vessel Wall'] = bc.getProperties()["Young's modulus"]
                 deformableGroup['Poisson Ratio of Vessel Wall'] = bc.getProperties()["Poisson ratio"]
                 deformableGroup['Shear Constant of Vessel Wall'] = shearConstant
-                deformableGroup['Number of Wall Properties per Node'] = 10
 
                 deformableGroup['Use SWB File'] = False
                 deformableGroup['Use TWB File'] = False
@@ -553,40 +614,42 @@ class SolverStudy(object):
                 deformableGroup['Wall State Filter Term'] = False
                 deformableGroup['Wall State Filter Coefficient'] = 0
 
+                if "Young's modulus" in materialStorage.arrays and "Young's modulus (anisotropic)" in materialStorage.arrays:
+                    raise RuntimeError('Isotropic and anisotropic deformable wall materials cannot be combined')
+
+                useSWB = False
+                numberOfWallProps = 10
+                readSWBCommand = None
+
                 # Check if external material is present
-                if "Young's modulus" in materialStorage.arrays and 'Thickness' in materialStorage.arrays:
-                    deformableGroup['Use SWB File'] = True
-                    supreFile.write('read_SWB_ISO SWB.dat\n')
-                    swbFile = fileList[os.path.join('presolver', 'SWB.dat')]
-                    thicknessArray = materialStorage.arrays['Thickness'].data
-                    stiffnessArray = materialStorage.arrays["Young's modulus"].data
+                if 'Thickness' in materialStorage.arrays:
+                    if "Young's modulus" in materialStorage.arrays:
+                        # Isotropic material
+                        useSWB = True
+                        numberOfWallProps = 10
+                        swbFileName = 'SWB_ISO.dat'
+                        swbFile = fileList[os.path.join('presolver', swbFileName)]
+                        readSWBCommand = 'read_SWB_ISO ' + swbFileName
+                        self._writeIsotropicMaterial(bc, faceIndicesInAllExteriorFaces, swbFile, materialStorage,
+                                                     shearConstant)
 
-                    v = bc.getProperties()["Poisson ratio"]
-                    v2 = math.pow(v, 2)
-                    Econst = bc.getProperties()["Young's modulus"]
-                    tConst = bc.getProperties()["Thickness"]
-                    k = shearConstant
+                    elif "Young's modulus (anisotropic)" in materialStorage.arrays:
+                        # Anisotropic material
+                        useSWB = True
+                        numberOfWallProps = 21
+                        swbFileName = 'SWB_ANISO.dat'
+                        swbFile = fileList[os.path.join('presolver', swbFileName)]
+                        readSWBCommand = 'read_SWB_ORTHO ' + swbFileName
 
-                    # Todo: do this only for faces belonging to the bc
-                    for i, faceId in enumerate(faceIndicesInAllExteriorFaces):
-                        t = thicknessArray[faceId][0]
-                        E = stiffnessArray[faceId][0]
+                        self._writeAnisotropicMaterial(bc, faceIndicesInAllExteriorFaces, swbFile, materialStorage,
+                                                       meshData, solidModelData, vesselForestData)
 
-                        if numpy.isnan(t):
-                            t = tConst
-                        if numpy.isnan(E):
-                            E = Econst
-
-                        S11 = S21 = S22 = S31 = S32 = 0.0
-                        K11 = E / (1 - v2)
-                        K12 = (E * v) / (1 - v2)
-                        K33 = (0.5 * E * (1 - v)) / (1 - v2)
-                        K44 = (0.5 * k * E * (1 - v)) / (1 - v2)
-
-                        swbFile.write(
-                            '{0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10}\n'.format(i + 1, t, S11, S21, S22, S31, S32,
-                                                                                    K11, K12, K33, K44))
-
+                deformableGroup['Use SWB File'] = useSWB
+                deformableGroup['Number of Wall Properties per Node'] = numberOfWallProps
+                supreFile.write('number_of_wall_Props {0}\n'.format(numberOfWallProps))
+                if readSWBCommand is not None:
+                    supreFile.write(readSWBCommand + '\n')
+                supreFile.write('deformable_solve\n\n')
 
         # Finalize
         if len(rcrInfo.faceIds) > 0:
@@ -629,6 +692,168 @@ class SolverStudy(object):
             presribedVelocititesGroup['Number of Dirichlet Surfaces Which Output Pressure and Flow'] = \
                 len(bctInfo.faceIds)
             presribedVelocititesGroup['List of Dirichlet Surfaces'] = ' '.join(bctInfo.faceIds)
+
+    def _writeIsotropicMaterial(self, bc, faceIndicesInAllExteriorFaces, swbFile, materialStorage, shearConstant):
+        thicknessArray = materialStorage.arrays['Thickness'].data
+        stiffnessArray = materialStorage.arrays["Young's modulus"].data
+        v = bc.getProperties()["Poisson ratio"]
+        v2 = math.pow(v, 2)
+        Econst = bc.getProperties()["Young's modulus"]
+        tConst = bc.getProperties()["Thickness"]
+        k = shearConstant
+        # SWB file MUST contain information for all exterior faces
+        for i, faceId in enumerate(faceIndicesInAllExteriorFaces):
+            t = thicknessArray[faceId][0]
+            E = stiffnessArray[faceId][0]
+
+            if numpy.isnan(t):
+                t = tConst
+            if numpy.isnan(E):
+                E = Econst
+
+            S11 = S21 = S22 = S31 = S32 = 0.0
+            K11 = E / (1 - v2)
+            K12 = (E * v) / (1 - v2)
+            K33 = (0.5 * E * (1 - v)) / (1 - v2)
+            K44 = (0.5 * k * E * (1 - v)) / (1 - v2)
+
+            swbFile.write(
+                '{0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10}\n'.format(i + 1, t, S11, S21, S22, S31, S32,
+                                                                        K11, K12, K33, K44))
+
+    def _writeAnisotropicMaterial(self, bc, faceIndicesInAllExteriorFaces, swbFile, materialStorage, meshData,
+                                  solidModelData, vesselForestData):
+        thicknessArray = materialStorage.arrays['Thickness'].data
+        stiffnessArray = materialStorage.arrays["Young's modulus (anisotropic)"].data
+        tConst = bc.getProperties()["Thickness"]
+        # SWB file MUST contain information for all exterior faces
+        for i in xrange(solidModelData.getNumberOfFaceIdentifiers()):
+            faceIdentifier = solidModelData.getFaceIdentifier(i)
+            for meshFaceInfo in meshData.getMeshFaceInfoForFace(faceIdentifier):
+                globalFaceId = meshFaceInfo[1]
+                t = thicknessArray[globalFaceId][0]
+                E = stiffnessArray[globalFaceId]
+
+                if numpy.isnan(t):
+                    t = tConst
+                if numpy.isnan(E[0]):
+                    E = [0, 0, 0, 0, 0, 0]
+
+                materialFaceInfo = MaterialFaceInfo(vesselForestData, meshData, faceIdentifier,
+                                                    meshFaceInfo)
+                coordinateFrame = materialFaceInfo.getVesselPathCoordinateFrame()
+
+                x1 = numpy.array(meshData.getNodeCoordinates(meshFaceInfo[2]))
+                x2 = numpy.array(meshData.getNodeCoordinates(meshFaceInfo[3]))
+                x3 = numpy.array(meshData.getNodeCoordinates(meshFaceInfo[4]))
+
+                # Face coordinate frame
+                v1 = x2 - x1
+                v1 /= numpy.linalg.norm(v1)
+
+                v2 = x3 - x1
+                v3 = numpy.cross(v1, v2)
+                v3 /= numpy.linalg.norm(v3)
+
+                v2 = numpy.cross(v3, v1)
+
+                # 'Membrane' coordinate frame
+                e3 = numpy.array(materialFaceInfo.getFaceCenter()) - numpy.array(coordinateFrame[0:3])
+                e3 /= numpy.linalg.norm(e3)
+                e2 = numpy.array(coordinateFrame[3:6])
+                e1 = numpy.cross(e2, e3)
+                e1 /= numpy.linalg.norm(e1)
+                e3 = numpy.cross(e1, e2)
+
+                # Transformation matrix
+                Q = numpy.array([[numpy.dot(v1, e1), numpy.dot(v1, e2), numpy.dot(v1, e3)],
+                                 [numpy.dot(v2, e1), numpy.dot(v2, e2), numpy.dot(v2, e3)],
+                                 [numpy.dot(v3, e1), numpy.dot(v3, e2), numpy.dot(v3, e3)]])
+
+                tempC = numpy.zeros([3, 3, 3, 3])
+
+                tempC[0, 0, 0, 0] = E[0]  # C_qqqq
+                tempC[0, 0, 1, 1] = E[1]  # C_qqzz
+                tempC[1, 1, 0, 0] = tempC[0, 0, 1, 1]
+                tempC[1, 1, 1, 1] = E[2]  # C_zzzz
+
+                tempC[0, 1, 0, 1] = E[3]  # 0.25 * (C_qzqz+C_qzzq+C_zqzq+C_zqqz)
+
+                tempC[0, 1, 1, 0] = tempC[0, 1, 0, 1]
+                tempC[1, 0, 1, 0] = tempC[0, 1, 0, 1]
+                tempC[1, 0, 0, 1] = tempC[0, 1, 0, 1]
+
+                tempC[2, 0, 2, 0] = E[4]  # C_rqrq
+
+                tempC[2, 1, 2, 1] = E[5]  # C_rzrz
+
+                tempCrot = numpy.zeros([3, 3, 3, 3])
+
+                # Transform the tensor
+                for i in range(3):
+                    for j in range(3):
+                        for k in range(3):
+                            for l in range(3):
+                                tempCrot[i, j, k, l] = \
+                                    Q[i, 0] * Q[j, 0] * Q[k, 0] * Q[l, 0] * tempC[0, 0, 0, 0] + \
+                                    Q[i, 1] * Q[j, 1] * Q[k, 1] * Q[l, 1] * tempC[1, 1, 1, 1] + \
+                                    Q[i, 0] * Q[j, 0] * Q[k, 1] * Q[l, 1] * tempC[0, 0, 1, 1] + \
+                                    Q[i, 1] * Q[j, 1] * Q[k, 0] * Q[l, 0] * tempC[1, 1, 0, 0] + \
+                                    Q[i, 0] * Q[j, 1] * Q[k, 0] * Q[l, 1] * tempC[0, 1, 0, 1] + \
+                                    Q[i, 1] * Q[j, 0] * Q[k, 1] * Q[l, 0] * tempC[1, 0, 1, 0] + \
+                                    Q[i, 1] * Q[j, 0] * Q[k, 0] * Q[l, 1] * tempC[1, 0, 0, 1] + \
+                                    Q[i, 0] * Q[j, 1] * Q[k, 1] * Q[l, 0] * tempC[0, 1, 1, 0] + \
+                                    Q[i, 0] * Q[j, 1] * Q[k, 0] * Q[l, 0] * tempC[0, 1, 0, 0] + \
+                                    Q[i, 0] * Q[j, 0] * Q[k, 0] * Q[l, 1] * tempC[0, 0, 0, 1] + \
+                                    Q[i, 1] * Q[j, 0] * Q[k, 1] * Q[l, 1] * tempC[1, 0, 1, 1] + \
+                                    Q[i, 1] * Q[j, 1] * Q[k, 1] * Q[l, 0] * tempC[1, 1, 1, 0] + \
+                                    Q[i, 1] * Q[j, 2] * Q[k, 1] * Q[l, 2] * tempC[1, 2, 1, 2] + \
+                                    Q[i, 2] * Q[j, 1] * Q[k, 2] * Q[l, 1] * tempC[2, 1, 2, 1] + \
+                                    Q[i, 2] * Q[j, 0] * Q[k, 2] * Q[l, 0] * tempC[2, 0, 2, 0] + \
+                                    Q[i, 0] * Q[j, 2] * Q[k, 0] * Q[l, 2] * tempC[0, 2, 0, 2] + \
+                                    tempCrot[i, j, k, l]
+
+                Kmatrix = numpy.zeros([5, 5])
+
+                Kmatrix[0, 0] = tempCrot[0, 0, 0, 0]
+                Kmatrix[0, 1] = tempCrot[0, 0, 1, 1]
+                Kmatrix[0, 2] = 0.5 * (tempCrot[0, 0, 0, 1] + tempCrot[0, 0, 1, 0])
+                Kmatrix[0, 3] = tempCrot[0, 0, 2, 0]
+                Kmatrix[0, 4] = tempCrot[0, 0, 2, 1]
+
+                Kmatrix[1, 0] = tempCrot[1, 1, 0, 0]
+                Kmatrix[1, 1] = tempCrot[1, 1, 1, 1]
+                Kmatrix[1, 2] = 0.5 * (tempCrot[1, 1, 0, 1] + tempCrot[1, 1, 1, 0])
+                Kmatrix[1, 3] = tempCrot[1, 1, 2, 0]
+                Kmatrix[1, 4] = tempCrot[1, 1, 2, 1]
+
+                Kmatrix[2, 0] = 0.5 * (tempCrot[0, 1, 0, 0] + tempCrot[1, 0, 0, 0])
+                Kmatrix[2, 1] = 0.5 * (tempCrot[0, 1, 1, 1] + tempCrot[1, 0, 1, 1])
+                Kmatrix[2, 2] = 0.25 * (tempCrot[0, 1, 0, 1] + tempCrot[0, 1, 1, 0] +
+                                        tempCrot[1, 0, 1, 0] + tempCrot[1, 0, 0, 1])
+                Kmatrix[2, 3] = 0.5 * (tempCrot[0, 1, 2, 0] + tempCrot[1, 0, 2, 0])
+                Kmatrix[2, 4] = 0.5 * (tempCrot[0, 1, 2, 1] + tempCrot[1, 0, 2, 1])
+
+                Kmatrix[3, 0] = tempCrot[2, 0, 0, 0]
+                Kmatrix[3, 1] = tempCrot[2, 0, 1, 1]
+                Kmatrix[3, 2] = 0.5 * (tempCrot[2, 0, 0, 1] + tempCrot[2, 0, 1, 0])
+                Kmatrix[3, 3] = tempCrot[2, 0, 2, 0]
+                Kmatrix[3, 4] = tempCrot[2, 0, 2, 1]
+
+                Kmatrix[4, 0] = tempCrot[2, 1, 0, 0]
+                Kmatrix[4, 1] = tempCrot[2, 1, 1, 1]
+                Kmatrix[4, 2] = 0.5 * (tempCrot[2, 1, 0, 1] + tempCrot[2, 1, 1, 0])
+                Kmatrix[4, 3] = tempCrot[2, 1, 2, 0]
+                Kmatrix[4, 4] = tempCrot[2, 1, 2, 1]
+
+                swbFile.write(
+                    '{0} {1} 0 0 0 0 0 '
+                    '{2[0][0]} {2[1][0]} {2[1][1]} '
+                    '{2[2][0]} {2[2][1]} {2[2][2]} '
+                    '{2[3][0]} {2[3][1]} {2[3][2]} '
+                    '{2[3][3]} {2[4][0]} {2[4][1]} '
+                    '{2[4][2]} {2[4][3]} {2[4][4]}\n'.format(
+                        faceIndicesInAllExteriorFaces.index(meshFaceInfo[1]) + 1, t, Kmatrix))
 
     def _writeSupreSurfaceIDs(self, faceIndicesAndFileNames, supreFile):
         supreFile.write('set_surface_id all_exterior_faces.ebc 1\n')
@@ -677,63 +902,6 @@ class SolverStudy(object):
 
         return OrderedDict(sorted(faceIndicesAndFileNames.items(), key=lambda t: t[1][0]))
 
-    #    def _getFaceCenter2(self, faceInfo, meshData):
-    #        center = numpy.array(meshData.getNodeCoordinates(faceInfo[2]))
-    #        numpy.add(center, meshData.getNodeCoordinates(faceInfo[3]), center)
-    #        numpy.add(center, meshData.getNodeCoordinates(faceInfo[4]), center)
-    #
-    #        return center / 3
-
-    # A helper class providing lazily-evaluated quantities for material computation
-    class MaterialFaceInfo(object):
-        def __init__(self, vesselForestData, meshData, faceIdentifier, meshFaceInfoData):
-            self.vesselForestData = vesselForestData
-            self.meshData = meshData
-            self.meshFaceInfoData = meshFaceInfoData
-            self.faceIdentifier = faceIdentifier
-
-        def getMeshFaceInfo(self):
-            return self.meshFaceInfoData
-
-        def getFaceCenter(self):
-            if 'center' not in self.__dict__:
-                self.center = self.meshData.getNodeCoordinates(self.meshFaceInfoData[2])
-                self.center = map(operator.add, self.center, self.meshData.getNodeCoordinates(self.meshFaceInfoData[3]))
-                self.center = map(operator.add, self.center, self.meshData.getNodeCoordinates(self.meshFaceInfoData[4]))
-
-                for i in xrange(3):
-                    self.center[i] /= 3
-
-            return self.center
-
-        def getLocalRadius(self):
-            if 'localRadius' not in self.__dict__:
-                self._computeLocalRadiusAndArcLength()
-
-            return self.localRadius
-
-        def getArcLength(self):
-            if 'arcLength' not in self.__dict__:
-                self._computeLocalRadiusAndArcLength()
-
-            return self.arcLength
-
-        def getVesselPathCoordinateFrame(self):
-            if 'vesselPathCoordinateFrame' not in self.__dict__:
-                faceCenter = self.getFaceCenter()
-                self.vesselPathCoordinateFrame = \
-                    self.vesselForestData.getVesselPathCoordinateFrame(self.faceIdentifier, faceCenter[0], faceCenter[1], faceCenter[2]) \
-                        if self.vesselForestData is not None else []
-
-        def _computeLocalRadiusAndArcLength(self):
-            faceCenter = self.getFaceCenter()
-            self.localRadius, self.arcLength = \
-                self.vesselForestData.getClosestPoint(self.faceIdentifier, faceCenter[0], faceCenter[1], faceCenter[2]) \
-                    if self.vesselForestData is not None else (0, 0)
-
-
-
-
     # Compute materials and return them in form of SolutionStorage
     def computeMaterials(self, materials, vesselForestData, solidModelData, meshData):
         with Timer('Compute materials'):
@@ -767,7 +935,7 @@ class SolverStudy(object):
                     for faceId in validFaceIdentifiers(m):
                         constantValue = getMaterialConstantValue(materialData)
                         for info in meshData.getMeshFaceInfoForFace(faceId):
-                            materialFaceInfo = SolverStudy.MaterialFaceInfo(vesselForestData, meshData, faceId, info)
+                            materialFaceInfo = MaterialFaceInfo(vesselForestData, meshData, faceId, info)
 
                             if materialData.representation == MaterialData.RepresentationType.Constant:
                                 value = constantValue
