@@ -614,35 +614,19 @@ class SolverStudy(object):
                 deformableGroup['Wall State Filter Term'] = False
                 deformableGroup['Wall State Filter Coefficient'] = 0
 
-                if "Young's modulus" in materialStorage.arrays and "Young's modulus (anisotropic)" in materialStorage.arrays:
-                    raise RuntimeError('Isotropic and anisotropic deformable wall materials cannot be combined')
-
                 useSWB = False
                 numberOfWallProps = 10
                 readSWBCommand = None
 
                 # Check if external material is present
                 if 'Thickness' in materialStorage.arrays:
-                    if "Young's modulus" in materialStorage.arrays:
-                        # Isotropic material
-                        useSWB = True
-                        numberOfWallProps = 10
-                        swbFileName = 'SWB_ISO.dat'
-                        swbFile = fileList[os.path.join('presolver', swbFileName)]
-                        readSWBCommand = 'read_SWB_ISO ' + swbFileName
-                        self._writeIsotropicMaterial(bc, faceIndicesInAllExteriorFaces, swbFile, materialStorage,
-                                                     shearConstant)
-
-                    elif "Young's modulus (anisotropic)" in materialStorage.arrays:
-                        # Anisotropic material
-                        useSWB = True
-                        numberOfWallProps = 21
-                        swbFileName = 'SWB_ANISO.dat'
-                        swbFile = fileList[os.path.join('presolver', swbFileName)]
-                        readSWBCommand = 'read_SWB_ORTHO ' + swbFileName
-
-                        self._writeAnisotropicMaterial(bc, faceIndicesInAllExteriorFaces, swbFile, materialStorage,
-                                                       meshData, solidModelData, vesselForestData)
+                    useSWB = True
+                    numberOfWallProps = 21
+                    swbFileName = 'SWB.dat'
+                    swbFile = fileList[os.path.join('presolver', swbFileName)]
+                    readSWBCommand = 'read_SWB_ORTHO ' + swbFileName
+                    self._writeMaterial(bc, faceIndicesInAllExteriorFaces, swbFile, materialStorage,
+                                        shearConstant, meshData, solidModelData, vesselForestData)
 
                 deformableGroup['Use SWB File'] = useSWB
                 deformableGroup['Number of Wall Properties per Node'] = numberOfWallProps
@@ -693,158 +677,40 @@ class SolverStudy(object):
                 len(bctInfo.faceIds)
             presribedVelocititesGroup['List of Dirichlet Surfaces'] = ' '.join(bctInfo.faceIds)
 
-    def _writeIsotropicMaterial(self, bc, faceIndicesInAllExteriorFaces, swbFile, materialStorage, shearConstant):
+    def _writeMaterial(self, bc, faceIndicesInAllExteriorFaces, swbFile, materialStorage, shearConstant, meshData,
+                       solidModelData, vesselForestData):
         thicknessArray = materialStorage.arrays['Thickness'].data
-        stiffnessArray = materialStorage.arrays["Young's modulus"].data
-        v = bc.getProperties()["Poisson ratio"]
-        v2 = math.pow(v, 2)
+        isoStiffnessArray = materialStorage.arrays["Young's modulus"].data \
+            if "Young's modulus" in materialStorage.arrays else None
+        anisoStiffnessArray = materialStorage.arrays["Young's modulus (anisotropic)"].data \
+            if "Young's modulus (anisotropic)" in materialStorage.arrays else None
+
+        tConst = bc.getProperties()["Thickness"]
         Econst = bc.getProperties()["Young's modulus"]
-        tConst = bc.getProperties()["Thickness"]
-        k = shearConstant
-        # SWB file MUST contain information for all exterior faces
-        for i, faceId in enumerate(faceIndicesInAllExteriorFaces):
-            t = thicknessArray[faceId][0]
-            E = stiffnessArray[faceId][0]
+        v = bc.getProperties()["Poisson ratio"]
 
-            if numpy.isnan(t):
-                t = tConst
-            if numpy.isnan(E):
-                E = Econst
+        faceIndexToAllExteriorFacesIndex = {y: x for x, y in enumerate(faceIndicesInAllExteriorFaces)}
 
-            S11 = S21 = S22 = S31 = S32 = 0.0
-            K11 = E / (1 - v2)
-            K12 = (E * v) / (1 - v2)
-            K33 = (0.5 * E * (1 - v)) / (1 - v2)
-            K44 = (0.5 * k * E * (1 - v)) / (1 - v2)
-
-            swbFile.write(
-                '{0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10}\n'.format(i + 1, t, S11, S21, S22, S31, S32,
-                                                                        K11, K12, K33, K44))
-
-    def _writeAnisotropicMaterial(self, bc, faceIndicesInAllExteriorFaces, swbFile, materialStorage, meshData,
-                                  solidModelData, vesselForestData):
-        thicknessArray = materialStorage.arrays['Thickness'].data
-        stiffnessArray = materialStorage.arrays["Young's modulus (anisotropic)"].data
-        tConst = bc.getProperties()["Thickness"]
         # SWB file MUST contain information for all exterior faces
         for i in xrange(solidModelData.getNumberOfFaceIdentifiers()):
             faceIdentifier = solidModelData.getFaceIdentifier(i)
             for meshFaceInfo in meshData.getMeshFaceInfoForFace(faceIdentifier):
                 globalFaceId = meshFaceInfo[1]
                 t = thicknessArray[globalFaceId][0]
-                E = stiffnessArray[globalFaceId]
 
                 if numpy.isnan(t):
                     t = tConst
-                if numpy.isnan(E[0]):
-                    E = [0, 0, 0, 0, 0, 0]
 
-                materialFaceInfo = MaterialFaceInfo(vesselForestData, meshData, faceIdentifier,
-                                                    meshFaceInfo)
-                coordinateFrame = materialFaceInfo.getVesselPathCoordinateFrame()
-
-                x1 = numpy.array(meshData.getNodeCoordinates(meshFaceInfo[2]))
-                x2 = numpy.array(meshData.getNodeCoordinates(meshFaceInfo[3]))
-                x3 = numpy.array(meshData.getNodeCoordinates(meshFaceInfo[4]))
-
-                # Face coordinate frame
-                v1 = x2 - x1
-                v1 /= numpy.linalg.norm(v1)
-
-                v2 = x3 - x1
-                v3 = numpy.cross(v1, v2)
-                v3 /= numpy.linalg.norm(v3)
-
-                v2 = numpy.cross(v3, v1)
-
-                # 'Membrane' coordinate frame
-                e3 = numpy.array(materialFaceInfo.getFaceCenter()) - numpy.array(coordinateFrame[0:3])
-                e3 /= numpy.linalg.norm(e3)
-                e2 = numpy.array(coordinateFrame[3:6])
-                e1 = numpy.cross(e2, e3)
-                e1 /= numpy.linalg.norm(e1)
-                e3 = numpy.cross(e1, e2)
-
-                # Transformation matrix
-                Q = numpy.array([[numpy.dot(v1, e1), numpy.dot(v1, e2), numpy.dot(v1, e3)],
-                                 [numpy.dot(v2, e1), numpy.dot(v2, e2), numpy.dot(v2, e3)],
-                                 [numpy.dot(v3, e1), numpy.dot(v3, e2), numpy.dot(v3, e3)]])
-
-                tempC = numpy.zeros([3, 3, 3, 3])
-
-                tempC[0, 0, 0, 0] = E[0]  # C_qqqq
-                tempC[0, 0, 1, 1] = E[1]  # C_qqzz
-                tempC[1, 1, 0, 0] = tempC[0, 0, 1, 1]
-                tempC[1, 1, 1, 1] = E[2]  # C_zzzz
-
-                tempC[0, 1, 0, 1] = E[3]  # 0.25 * (C_qzqz+C_qzzq+C_zqzq+C_zqqz)
-
-                tempC[0, 1, 1, 0] = tempC[0, 1, 0, 1]
-                tempC[1, 0, 1, 0] = tempC[0, 1, 0, 1]
-                tempC[1, 0, 0, 1] = tempC[0, 1, 0, 1]
-
-                tempC[2, 0, 2, 0] = E[4]  # C_rqrq
-
-                tempC[2, 1, 2, 1] = E[5]  # C_rzrz
-
-                tempCrot = numpy.zeros([3, 3, 3, 3])
-
-                # Transform the tensor
-                for i in range(3):
-                    for j in range(3):
-                        for k in range(3):
-                            for l in range(3):
-                                tempCrot[i, j, k, l] = \
-                                    Q[i, 0] * Q[j, 0] * Q[k, 0] * Q[l, 0] * tempC[0, 0, 0, 0] + \
-                                    Q[i, 1] * Q[j, 1] * Q[k, 1] * Q[l, 1] * tempC[1, 1, 1, 1] + \
-                                    Q[i, 0] * Q[j, 0] * Q[k, 1] * Q[l, 1] * tempC[0, 0, 1, 1] + \
-                                    Q[i, 1] * Q[j, 1] * Q[k, 0] * Q[l, 0] * tempC[1, 1, 0, 0] + \
-                                    Q[i, 0] * Q[j, 1] * Q[k, 0] * Q[l, 1] * tempC[0, 1, 0, 1] + \
-                                    Q[i, 1] * Q[j, 0] * Q[k, 1] * Q[l, 0] * tempC[1, 0, 1, 0] + \
-                                    Q[i, 1] * Q[j, 0] * Q[k, 0] * Q[l, 1] * tempC[1, 0, 0, 1] + \
-                                    Q[i, 0] * Q[j, 1] * Q[k, 1] * Q[l, 0] * tempC[0, 1, 1, 0] + \
-                                    Q[i, 0] * Q[j, 1] * Q[k, 0] * Q[l, 0] * tempC[0, 1, 0, 0] + \
-                                    Q[i, 0] * Q[j, 0] * Q[k, 0] * Q[l, 1] * tempC[0, 0, 0, 1] + \
-                                    Q[i, 1] * Q[j, 0] * Q[k, 1] * Q[l, 1] * tempC[1, 0, 1, 1] + \
-                                    Q[i, 1] * Q[j, 1] * Q[k, 1] * Q[l, 0] * tempC[1, 1, 1, 0] + \
-                                    Q[i, 1] * Q[j, 2] * Q[k, 1] * Q[l, 2] * tempC[1, 2, 1, 2] + \
-                                    Q[i, 2] * Q[j, 1] * Q[k, 2] * Q[l, 1] * tempC[2, 1, 2, 1] + \
-                                    Q[i, 2] * Q[j, 0] * Q[k, 2] * Q[l, 0] * tempC[2, 0, 2, 0] + \
-                                    Q[i, 0] * Q[j, 2] * Q[k, 0] * Q[l, 2] * tempC[0, 2, 0, 2] + \
-                                    tempCrot[i, j, k, l]
-
-                Kmatrix = numpy.zeros([5, 5])
-
-                Kmatrix[0, 0] = tempCrot[0, 0, 0, 0]
-                Kmatrix[0, 1] = tempCrot[0, 0, 1, 1]
-                Kmatrix[0, 2] = 0.5 * (tempCrot[0, 0, 0, 1] + tempCrot[0, 0, 1, 0])
-                Kmatrix[0, 3] = tempCrot[0, 0, 2, 0]
-                Kmatrix[0, 4] = tempCrot[0, 0, 2, 1]
-
-                Kmatrix[1, 0] = tempCrot[1, 1, 0, 0]
-                Kmatrix[1, 1] = tempCrot[1, 1, 1, 1]
-                Kmatrix[1, 2] = 0.5 * (tempCrot[1, 1, 0, 1] + tempCrot[1, 1, 1, 0])
-                Kmatrix[1, 3] = tempCrot[1, 1, 2, 0]
-                Kmatrix[1, 4] = tempCrot[1, 1, 2, 1]
-
-                Kmatrix[2, 0] = 0.5 * (tempCrot[0, 1, 0, 0] + tempCrot[1, 0, 0, 0])
-                Kmatrix[2, 1] = 0.5 * (tempCrot[0, 1, 1, 1] + tempCrot[1, 0, 1, 1])
-                Kmatrix[2, 2] = 0.25 * (tempCrot[0, 1, 0, 1] + tempCrot[0, 1, 1, 0] +
-                                        tempCrot[1, 0, 1, 0] + tempCrot[1, 0, 0, 1])
-                Kmatrix[2, 3] = 0.5 * (tempCrot[0, 1, 2, 0] + tempCrot[1, 0, 2, 0])
-                Kmatrix[2, 4] = 0.5 * (tempCrot[0, 1, 2, 1] + tempCrot[1, 0, 2, 1])
-
-                Kmatrix[3, 0] = tempCrot[2, 0, 0, 0]
-                Kmatrix[3, 1] = tempCrot[2, 0, 1, 1]
-                Kmatrix[3, 2] = 0.5 * (tempCrot[2, 0, 0, 1] + tempCrot[2, 0, 1, 0])
-                Kmatrix[3, 3] = tempCrot[2, 0, 2, 0]
-                Kmatrix[3, 4] = tempCrot[2, 0, 2, 1]
-
-                Kmatrix[4, 0] = tempCrot[2, 1, 0, 0]
-                Kmatrix[4, 1] = tempCrot[2, 1, 1, 1]
-                Kmatrix[4, 2] = 0.5 * (tempCrot[2, 1, 0, 1] + tempCrot[2, 1, 1, 0])
-                Kmatrix[4, 3] = tempCrot[2, 1, 2, 0]
-                Kmatrix[4, 4] = tempCrot[2, 1, 2, 1]
+                if anisoStiffnessArray is not None and not numpy.isnan(anisoStiffnessArray[globalFaceId][0]):
+                    stiffnessMatrix = self._computeAnisotropicStiffnessMatrix(
+                        MaterialFaceInfo(vesselForestData, meshData, faceIdentifier, meshFaceInfo),
+                        anisoStiffnessArray[globalFaceId])
+                else:
+                    if isoStiffnessArray is not None and not numpy.isnan(isoStiffnessArray[globalFaceId][0]):
+                        E = isoStiffnessArray[globalFaceId][0]
+                    else:
+                        E = Econst
+                    stiffnessMatrix = self._computeIsotropicStiffnessMatrix(v, E, shearConstant)
 
                 swbFile.write(
                     '{0} {1} 0 0 0 0 0 '
@@ -853,7 +719,110 @@ class SolverStudy(object):
                     '{2[3][0]} {2[3][1]} {2[3][2]} '
                     '{2[3][3]} {2[4][0]} {2[4][1]} '
                     '{2[4][2]} {2[4][3]} {2[4][4]}\n'.format(
-                        faceIndicesInAllExteriorFaces.index(meshFaceInfo[1]) + 1, t, Kmatrix))
+                        faceIndexToAllExteriorFacesIndex[globalFaceId] + 1, t, stiffnessMatrix))
+
+    def _computeIsotropicStiffnessMatrix(self, poissonRatio, youngsModulus, shearConstant):
+        Kmatrix = numpy.zeros([5, 5])
+
+        C = youngsModulus / (1 - poissonRatio * poissonRatio)
+
+        Kmatrix[0, 0] = Kmatrix[1, 1] = C
+        Kmatrix[0, 1] = Kmatrix[1, 0] = C * poissonRatio
+        Kmatrix[2, 2] = C * 0.5 * (1 - poissonRatio)
+        Kmatrix[3, 3] = Kmatrix[4, 4] = C * 0.5 * shearConstant * (1 - poissonRatio)
+
+        return Kmatrix
+
+    def _computeAnisotropicStiffnessMatrix(self, materialFaceInfo, youngsModulusAniso):
+        coordinateFrame = materialFaceInfo.getVesselPathCoordinateFrame()
+
+        x1 = numpy.array(materialFaceInfo.meshData.getNodeCoordinates(materialFaceInfo.meshFaceInfoData[2]))
+        x2 = numpy.array(materialFaceInfo.meshData.getNodeCoordinates(materialFaceInfo.meshFaceInfoData[3]))
+        x3 = numpy.array(materialFaceInfo.meshData.getNodeCoordinates(materialFaceInfo.meshFaceInfoData[4]))
+
+        # Face coordinate frame
+        v1 = x2 - x1
+        v1 /= numpy.linalg.norm(v1)
+
+        v2 = x3 - x1
+        v3 = numpy.cross(v1, v2)
+        v3 /= numpy.linalg.norm(v3)
+
+        v2 = numpy.cross(v3, v1)
+
+        # 'Membrane' coordinate frame
+        e3 = numpy.array(materialFaceInfo.getFaceCenter()) - numpy.array(coordinateFrame[0:3])
+        e3 /= numpy.linalg.norm(e3)
+        e2 = numpy.array(coordinateFrame[3:6])
+        e1 = numpy.cross(e2, e3)
+        e1 /= numpy.linalg.norm(e1)
+        e3 = numpy.cross(e1, e2)
+
+        # Transformation matrix
+        Q = numpy.array([[numpy.dot(v1, e1), numpy.dot(v1, e2), numpy.dot(v1, e3)],
+                         [numpy.dot(v2, e1), numpy.dot(v2, e2), numpy.dot(v2, e3)],
+                         [numpy.dot(v3, e1), numpy.dot(v3, e2), numpy.dot(v3, e3)]])
+
+        tempC = numpy.zeros([3, 3, 3, 3])
+
+        tempC[0, 0, 0, 0] = youngsModulusAniso[0]  # C_qqqq
+        tempC[0, 0, 1, 1] = youngsModulusAniso[1]  # C_qqzz
+        tempC[1, 1, 0, 0] = tempC[0, 0, 1, 1]
+        tempC[1, 1, 1, 1] = youngsModulusAniso[2]  # C_zzzz
+
+        tempC[0, 1, 0, 1] = youngsModulusAniso[3]  # 0.25 * (C_qzqz+C_qzzq+C_zqzq+C_zqqz)
+
+        tempC[0, 1, 1, 0] = tempC[0, 1, 0, 1]
+        tempC[1, 0, 1, 0] = tempC[0, 1, 0, 1]
+        tempC[1, 0, 0, 1] = tempC[0, 1, 0, 1]
+
+        tempC[2, 0, 2, 0] = youngsModulusAniso[4]  # C_rqrq
+
+        tempC[2, 1, 2, 1] = youngsModulusAniso[5]  # C_rzrz
+
+        # http://stackoverflow.com/questions/4962606/fast-tensor-rotation-with-numpy
+        def rotateTensor(tensor, transform):
+            gg = numpy.outer(transform, transform)
+            gggg = numpy.outer(gg, gg).reshape(4 * transform.shape)
+            axes = ((0, 2, 4, 6), (0, 1, 2, 3))
+            return numpy.tensordot(gggg, tensor, axes)
+
+        tempCrot = rotateTensor(tempC, Q.T)
+
+        Kmatrix = numpy.zeros([5, 5])
+
+        Kmatrix[0, 0] = tempCrot[0, 0, 0, 0]
+        Kmatrix[0, 1] = tempCrot[0, 0, 1, 1]
+        Kmatrix[0, 2] = 0.5 * (tempCrot[0, 0, 0, 1] + tempCrot[0, 0, 1, 0])
+        Kmatrix[0, 3] = tempCrot[0, 0, 2, 0]
+        Kmatrix[0, 4] = tempCrot[0, 0, 2, 1]
+
+        Kmatrix[1, 0] = tempCrot[1, 1, 0, 0]
+        Kmatrix[1, 1] = tempCrot[1, 1, 1, 1]
+        Kmatrix[1, 2] = 0.5 * (tempCrot[1, 1, 0, 1] + tempCrot[1, 1, 1, 0])
+        Kmatrix[1, 3] = tempCrot[1, 1, 2, 0]
+        Kmatrix[1, 4] = tempCrot[1, 1, 2, 1]
+
+        Kmatrix[2, 0] = 0.5 * (tempCrot[0, 1, 0, 0] + tempCrot[1, 0, 0, 0])
+        Kmatrix[2, 1] = 0.5 * (tempCrot[0, 1, 1, 1] + tempCrot[1, 0, 1, 1])
+        Kmatrix[2, 2] = 0.25 * (tempCrot[0, 1, 0, 1] + tempCrot[0, 1, 1, 0] +
+                                tempCrot[1, 0, 1, 0] + tempCrot[1, 0, 0, 1])
+        Kmatrix[2, 3] = 0.5 * (tempCrot[0, 1, 2, 0] + tempCrot[1, 0, 2, 0])
+        Kmatrix[2, 4] = 0.5 * (tempCrot[0, 1, 2, 1] + tempCrot[1, 0, 2, 1])
+
+        Kmatrix[3, 0] = tempCrot[2, 0, 0, 0]
+        Kmatrix[3, 1] = tempCrot[2, 0, 1, 1]
+        Kmatrix[3, 2] = 0.5 * (tempCrot[2, 0, 0, 1] + tempCrot[2, 0, 1, 0])
+        Kmatrix[3, 3] = tempCrot[2, 0, 2, 0]
+        Kmatrix[3, 4] = tempCrot[2, 0, 2, 1]
+
+        Kmatrix[4, 0] = tempCrot[2, 1, 0, 0]
+        Kmatrix[4, 1] = tempCrot[2, 1, 1, 1]
+        Kmatrix[4, 2] = 0.5 * (tempCrot[2, 1, 0, 1] + tempCrot[2, 1, 1, 0])
+        Kmatrix[4, 3] = tempCrot[2, 1, 2, 0]
+        Kmatrix[4, 4] = tempCrot[2, 1, 2, 1]
+
+        return Kmatrix
 
     def _writeSupreSurfaceIDs(self, faceIndicesAndFileNames, supreFile):
         supreFile.write('set_surface_id all_exterior_faces.ebc 1\n')
