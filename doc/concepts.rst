@@ -38,6 +38,15 @@ A vessel tree is passed to the ``writeSolverSetup`` method of a solver study and
 ``getClosestPoint(faceIdentifier, x, y, z)``
     Returns the distance to arc length along the vessel path defined by the ``faceIdentifier`` to the point at coordinates ``(x, y, z)``.
 
+``getVesselPathCoordinateFrame(faceIdentifier, x, y, z)``
+    Returns the coordinate frame defined by the vessel path given the coordinates ``(x, y, z)``.
+    The return value is a list of 9 floating point values:
+     - [0:3] - the coordinates of the point on the vessel path closest to ``(x, y, z)``
+     - [4:6] - the tangent vector
+     - [7:9] - the normal vector
+
+    The binormal vector can be obtained by taking a cross product of normal and tangent vectors.
+
 .. _geometric-model:
 
 Geometric model
@@ -374,4 +383,7 @@ A solver study class is expected to implement the following interface:
                           has been loaded using ``loadSolution`` or transferred to the new mesh during mesh adaptation.
 
 ``loadSolution()``
-    Load the result of simulation. Should return an instance of :mod:`CRIMSONCore.SolultionStorage`.
+    Load the result of simulation. Should return an instance of :mod:`CRIMSONCore.SolultionStorage` mapping mesh node indices to data values.
+
+``computeMaterials()``
+    Compute the material values. Should return an instance of :mod:`CRIMSONCore.SolultionStorage` mapping mesh face indices to material values.
