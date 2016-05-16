@@ -8,6 +8,7 @@ import math
 import operator
 import ntpath
 import stat
+import platform
 
 from PythonQt import QtGui
 from PythonQt.CRIMSON import FaceType
@@ -34,7 +35,7 @@ class MaterialFaceInfo(object):
 
     def getMeshFaceInfo(self):
         return self.meshFaceInfoData
-
+                                                                                                
     def getFaceCenter(self):
         if 'center' not in self.__dict__:
             self.center = self.meshData.getNodeCoordinates(self.meshFaceInfoData[2])
@@ -254,7 +255,8 @@ class SolverStudy(object):
                                                             PresolverExecutableName.getPresolverExecutableName()))
         Utils.logInformation('Running presolver from ' + presolverExecutable)
 
-        os.chmod(presolverExecutable, os.stat(presolverExecutable).st_mode | stat.S_IEXEC)
+        if platform.system() != 'Windows':
+            os.chmod(presolverExecutable, os.stat(presolverExecutable).st_mode | stat.S_IEXEC)
 
         supreDir, supreFileName = os.path.split(supreFile)
         p = subprocess.Popen([presolverExecutable, supreFileName], cwd=supreDir,
