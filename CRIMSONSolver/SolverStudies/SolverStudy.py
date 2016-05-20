@@ -711,7 +711,10 @@ class SolverStudy(object):
                     if isoStiffnessArray is not None and not numpy.isnan(isoStiffnessArray[globalFaceId][0]):
                         E = isoStiffnessArray[globalFaceId][0]
                     else:
-                        E = Econst
+                        if faceIdentifier.faceType != FaceType.ftWall:
+                            continue # Ignore flow faces which have no material set
+                        else:
+                            E = Econst # Treat wall faces as having isotropic material with values from BC
                     stiffnessMatrix = self._computeIsotropicStiffnessMatrix(v, E, shearConstant)
 
                 swbFile.write(
