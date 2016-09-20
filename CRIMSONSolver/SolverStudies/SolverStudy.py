@@ -559,6 +559,18 @@ class SolverStudy(object):
 
                 supreFile.write('\n')
 
+                def writeBctWaveforms(waveform, steadyWaveformValue):
+                    smoothedFlowWaveformFile = fileList['bctFlowWaveform.dat']
+                    numpy.savetxt(smoothedFlowWaveformFile, waveform)
+
+                    steadyFlowWaveformFile = fileList['bctFlowWaveform_steady.dat']
+                    numpy.savetxt(steadyFlowWaveformFile,
+                                  numpy.array([[waveform[0, 0], steadyWaveformValue],
+                                   [waveform[-1, 0], steadyWaveformValue]]) )
+
+                writeBctWaveforms(waveform, steadyWaveformValue)
+
+
                 def writeBctProfile(file, wave):
                     for faceId in validFaceIdentifiers(bc):
                         flowProfileGenerator = FlowProfileGenerator(bc.getProperties()['Profile type'], solidModelData,
