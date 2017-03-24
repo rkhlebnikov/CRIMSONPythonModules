@@ -24,7 +24,7 @@ setup(name='CRIMSON',
                 'CRIMSONSolver.Materials'
                 ],
       py_modules=['upgradeScene', 'upgradeScene2'],
-      data_files = [('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies', flowsolver_files),
+      data_files = [('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver', flowsolver_files),
       ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies', ['CRIMSONSolver/SolverStudies/${presolver_executable_filename}',]),
                     ('${python_lib_folder}site-packages/CRIMSONSolver/BoundaryConditions/ui', ['CRIMSONSolver/BoundaryConditions/ui/PrescribedVelocitiesBoundaryConditionEditorWidget.ui',]),
                     ('${python_lib_folder}site-packages/CRIMSONSolver/BoundaryConditions/ui', ['CRIMSONSolver/BoundaryConditions/ui/NetlistBCEditorWidget.ui',]),
