@@ -56,6 +56,8 @@ class SolverInpData():
         cardiovascularModelingGroup['Number of Surfaces which Output Pressure and Flow'] = len(outputSurfaceIds)
         cardiovascularModelingGroup['List of Output Surfaces'] = ' '.join(outputSurfaceIds)
 
+        cardiovascularModelingGroup['Simulate in Purely Zero Dimensions'] = props['Simulate in Purely Zero Dimensions']
+
         #############################################################################
         linearSolverGroup = self['LINEAR SOLVER']
         nSteps = props['Step construction']

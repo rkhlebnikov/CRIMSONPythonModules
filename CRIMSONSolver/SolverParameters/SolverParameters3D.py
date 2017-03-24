@@ -72,6 +72,9 @@ class SolverParameters3D(PropertyStorage):
                         "Influx coefficient": 0.5,
                         "attributes": {"minimum": 0.01, "maximum": 1.0}
                     },
+                    {
+                        "Simulate in Purely Zero Dimensions": False,
+                    },
                 ]
             },
             {

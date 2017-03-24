@@ -150,6 +150,32 @@ class SolverStudy(object):
 
         return solutions
 
+    def runFlowsolver(self):
+        simulationDirectory = QtGui.QFileDialog.getExistingDirectory(None, 'Set simulation directory')
+
+        if not simulationDirectory:
+            return
+
+        self._runFlowsolver(simulationDirectory)
+
+    def _runFlowsolver(self, simulationDirectory): #, numberOfProcessors):
+        if platform.system() == "Windows":  # todo add linux case, below - in particular to avoid calling cmd.exe
+            flowsolverBatchFileName = "mysolver.bat"
+            flowsolverDirectory = os.path.normpath(os.path.join(os.path.realpath(__file__),
+                                                                 os.pardir, "flowsolver",))
+
+            flowsolverBatchFileFullPath = os.path.join(flowsolverDirectory, flowsolverBatchFileName)
+
+            Utils.logInformation('Running flowsolver from ' + flowsolverBatchFileFullPath)
+
+            # Launch in a new console so e.g. ctrl+c on the flowsolver console doesn't terminate CRIMSON
+            subprocess.Popen(["cmd.exe", "/c", flowsolverBatchFileFullPath, simulationDirectory],
+                             cwd=flowsolverDirectory,
+                             creationflags=subprocess.CREATE_NEW_CONSOLE,
+                             stderr=subprocess.STDOUT)
+
+    # Called from Modules\PythonSolverSetupService\src\PythonSolverStudyData.cpp
+    #                      ~line 297: _pyStudyObject.call("writeSolverSetup",...
     def writeSolverSetup(self, vesselForestData, solidModelData, meshData, solverParameters, boundaryConditions,
                          materials, vesselPathNames, solutionStorage):
 
@@ -216,6 +242,8 @@ class SolverStudy(object):
             Utils.logError(str(e))
             fileList.close()
             raise
+
+        # self._runFlowsolver(outputDir)
 
     def _appendSolutionsToRestart(self, outputDir, solutionStorage):
         restartFileName = os.path.join(outputDir, 'restart.0.1')
