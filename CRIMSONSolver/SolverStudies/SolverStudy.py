@@ -243,7 +243,6 @@ class SolverStudy(object):
             fileList.close()
             raise
 
-        # self._runFlowsolver(outputDir)
 
     def _appendSolutionsToRestart(self, outputDir, solutionStorage):
         restartFileName = os.path.join(outputDir, 'restart.0.1')

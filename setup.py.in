@@ -1,4 +1,15 @@
 from distutils.core import setup
+import os
+
+def gatherFlowsolverFiles(directory):
+  flowsolver_files = []
+  for (path, directories, filenames) in os.walk(directory):
+    for filename in filenames:
+      flowsolver_files.append(os.path.join(path, filename))
+  return flowsolver_files
+
+
+flowsolver_files = gatherFlowsolverFiles('CRIMSONSolver/SolverStudies/flowsolver')
 
 setup(name='CRIMSON',
       version='1.0',
@@ -13,7 +24,8 @@ setup(name='CRIMSON',
                 'CRIMSONSolver.Materials'
                 ],
       py_modules=['upgradeScene', 'upgradeScene2'],
-      data_files = [('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies', ['CRIMSONSolver/SolverStudies/${presolver_executable_filename}',]),
+      data_files = [('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies', flowsolver_files),
+      ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies', ['CRIMSONSolver/SolverStudies/${presolver_executable_filename}',]),
                     ('${python_lib_folder}site-packages/CRIMSONSolver/BoundaryConditions/ui', ['CRIMSONSolver/BoundaryConditions/ui/PrescribedVelocitiesBoundaryConditionEditorWidget.ui',]),
                     ('${python_lib_folder}site-packages/CRIMSONSolver/BoundaryConditions/ui', ['CRIMSONSolver/BoundaryConditions/ui/NetlistBCEditorWidget.ui',]),
                     ('${python_lib_folder}site-packages/CRIMSONSolver/BoundaryConditions/ui/icons', ['CRIMSONSolver/BoundaryConditions/ui/icons/open.png',]),
