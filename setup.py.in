@@ -2,10 +2,8 @@ from distutils.core import setup
 import os
 
 def gatherDirectoryContents(directory):
-  files = []
-  for (path, directories, filenames) in os.walk(directory):
-    for filename in filenames:
-      files.append(os.path.join(path, filename))
+  fullFilePaths = [os.path.join(directory, filename) for filename in os.listdir(directory)]
+  files = [fullFilename for fullFilename in fullFilePaths if os.path.isfile(fullFilename)]
   return files
 
 
@@ -31,7 +29,6 @@ setup(name='CRIMSON',
                     ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver/flowsolverConfig', flowsolver_config_files),
                     ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver/pythonLibs', python_libs),
                     ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver/basicControlScripts', basic_control_scripts_files),
-                    ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver', flowsolver_files),
                     ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies', ['CRIMSONSolver/SolverStudies/${presolver_executable_filename}',]),
                     ('${python_lib_folder}site-packages/CRIMSONSolver/BoundaryConditions/ui', ['CRIMSONSolver/BoundaryConditions/ui/PrescribedVelocitiesBoundaryConditionEditorWidget.ui',]),
                     ('${python_lib_folder}site-packages/CRIMSONSolver/BoundaryConditions/ui', ['CRIMSONSolver/BoundaryConditions/ui/NetlistBCEditorWidget.ui',]),
