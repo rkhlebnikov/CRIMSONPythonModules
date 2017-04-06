@@ -178,7 +178,6 @@ class SolverStudy(object):
             # Launch in a new console so e.g. ctrl+c on the flowsolver console doesn't terminate CRIMSON
             subprocess.Popen(command,
                              cwd=flowsolverDirectory,
-                             stderr=subprocess.STDOUT,
                              creationflags=subprocess.CREATE_NEW_CONSOLE)
 
 
