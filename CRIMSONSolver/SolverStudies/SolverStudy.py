@@ -167,12 +167,20 @@ class SolverStudy(object):
             flowsolverBatchFileFullPath = os.path.join(flowsolverDirectory, flowsolverBatchFileName)
 
             Utils.logInformation('Running flowsolver from ' + flowsolverBatchFileFullPath)
+            Utils.logInformation('Using working directory ' + simulationDirectory)
+
+            # In case the paths both contain spaces, this pattern of double quotes is required
+            # so that the Windows shell understands what we are asking it to do.
+            #
+            # Specifically, "" to start and end the whole argument set, and " around each path.
+            command = "cmd.exe " + "/c \"\"" + flowsolverBatchFileFullPath + "\" \"" + simulationDirectory + "\"\""
 
             # Launch in a new console so e.g. ctrl+c on the flowsolver console doesn't terminate CRIMSON
-            subprocess.Popen(["cmd.exe", "/c", flowsolverBatchFileFullPath, simulationDirectory],
+            subprocess.Popen(command,
                              cwd=flowsolverDirectory,
-                             creationflags=subprocess.CREATE_NEW_CONSOLE,
-                             stderr=subprocess.STDOUT)
+                             stderr=subprocess.STDOUT,
+                             creationflags=subprocess.CREATE_NEW_CONSOLE)
+
 
     # Called from Modules\PythonSolverSetupService\src\PythonSolverStudyData.cpp
     #                      ~line 297: _pyStudyObject.call("writeSolverSetup",...
