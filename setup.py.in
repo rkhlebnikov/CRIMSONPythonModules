@@ -1,16 +1,54 @@
 from distutils.core import setup
 import os
 
+
 def gatherDirectoryContents(directory):
   fullFilePaths = [os.path.join(directory, filename) for filename in os.listdir(directory)]
   files = [fullFilename for fullFilename in fullFilePaths if os.path.isfile(fullFilename)]
   return files
 
+def getAllSubdirectoryNames(root):
+  allSubdirectoryNames = []
+  for (path, directories, filenames) in os.walk(root):
+    for directory in directories:
+      allSubdirectoryNames.append(os.path.join(path, directory))
+  return allSubdirectoryNames
 
+def recursiveGatherAllSubfolderContents(root):
+  python_libs_subdirectories = getAllSubdirectoryNames(root)
+  additional_data_files = []
+  for subdirectory in python_libs_subdirectories:
+    subdirectory_placeholder = '${python_lib_folder}site-packages/' + subdirectory  #.replace('\\', '/')
+    directory_contents = [os.path.abspath(file_in_directory) for file_in_directory in gatherDirectoryContents(subdirectory)]
+    this_subdirectory_contents = (subdirectory_placeholder, directory_contents)
+    additional_data_files.append(this_subdirectory_contents)
+  return additional_data_files
+
+# Working dir at runtime will be your system's equivalent to I:\crmsn\sb\CMakeExternals\Source\PythonModules
 flowsolver_files = gatherDirectoryContents('CRIMSONSolver/SolverStudies/flowsolver')
 basic_control_scripts_files = gatherDirectoryContents('CRIMSONSolver/SolverStudies/flowsolver/basicControlScripts')
 flowsolver_config_files = gatherDirectoryContents('CRIMSONSolver/SolverStudies/flowsolver/flowsolverConfig')
 python_libs = gatherDirectoryContents('CRIMSONSolver/SolverStudies/flowsolver/pythonLibs')
+
+python_libs_data = recursiveGatherAllSubfolderContents('CRIMSONSolver/SolverStudies/flowsolver/pythonLibs')
+
+data_files_in = [('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver', flowsolver_files),
+                ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver/flowsolverConfig', flowsolver_config_files),
+                ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver/basicControlScripts', basic_control_scripts_files),
+                ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver/pythonLibs', python_libs),
+                ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies', ['CRIMSONSolver/SolverStudies/${presolver_executable_filename}',]),
+                ('${python_lib_folder}site-packages/CRIMSONSolver/BoundaryConditions/ui', ['CRIMSONSolver/BoundaryConditions/ui/PrescribedVelocitiesBoundaryConditionEditorWidget.ui',]),
+                ('${python_lib_folder}site-packages/CRIMSONSolver/BoundaryConditions/ui', ['CRIMSONSolver/BoundaryConditions/ui/NetlistBCEditorWidget.ui',]),
+                ('${python_lib_folder}site-packages/CRIMSONSolver/BoundaryConditions/ui/icons', ['CRIMSONSolver/BoundaryConditions/ui/icons/open.png',]),
+                ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui', ['CRIMSONSolver/Materials/ui/MaterialEditorWidget.ui',]),
+                ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui', ['CRIMSONSolver/Materials/ui/SingleMaterialEditorWidget.ui',]),
+                ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/after.png',]),
+                ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/before.png',]),
+                ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/circle.png',]),
+                ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/delete.png',]),
+                ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/open.png',]),
+                ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/save.png',]),
+                ] + python_libs_data
 
 setup(name='CRIMSON',
       version='1.0',
@@ -25,21 +63,5 @@ setup(name='CRIMSON',
                 'CRIMSONSolver.Materials'
                 ],
       py_modules=['upgradeScene', 'upgradeScene2'],
-      data_files = [('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver', flowsolver_files),
-                    ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver/flowsolverConfig', flowsolver_config_files),
-                    ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver/pythonLibs', python_libs),
-                    ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver/basicControlScripts', basic_control_scripts_files),
-                    ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies', ['CRIMSONSolver/SolverStudies/${presolver_executable_filename}',]),
-                    ('${python_lib_folder}site-packages/CRIMSONSolver/BoundaryConditions/ui', ['CRIMSONSolver/BoundaryConditions/ui/PrescribedVelocitiesBoundaryConditionEditorWidget.ui',]),
-                    ('${python_lib_folder}site-packages/CRIMSONSolver/BoundaryConditions/ui', ['CRIMSONSolver/BoundaryConditions/ui/NetlistBCEditorWidget.ui',]),
-                    ('${python_lib_folder}site-packages/CRIMSONSolver/BoundaryConditions/ui/icons', ['CRIMSONSolver/BoundaryConditions/ui/icons/open.png',]),
-                    ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui', ['CRIMSONSolver/Materials/ui/MaterialEditorWidget.ui',]),
-                    ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui', ['CRIMSONSolver/Materials/ui/SingleMaterialEditorWidget.ui',]),
-                    ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/after.png',]),
-                    ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/before.png',]),
-                    ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/circle.png',]),
-                    ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/delete.png',]),
-                    ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/open.png',]),
-                    ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/save.png',]),
-                    ]
+      data_files = data_files_in
       )

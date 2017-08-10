@@ -1,6 +1,7 @@
 from PythonQt.CRIMSON import FaceType
 from collections import OrderedDict
 from CRIMSONSolver.SolverParameters.SolverParameters3D import CouplingType, SolverType
+from PythonQt.CRIMSON import Utils
 
 __author__ = 'rk13'
 
@@ -56,7 +57,17 @@ class SolverInpData():
         cardiovascularModelingGroup['Number of Surfaces which Output Pressure and Flow'] = len(outputSurfaceIds)
         cardiovascularModelingGroup['List of Output Surfaces'] = ' '.join(outputSurfaceIds)
 
-        cardiovascularModelingGroup['Simulate in Purely Zero Dimensions'] = props['Simulate in Purely Zero Dimensions']
+        try:
+            cardiovascularModelingGroup['Simulate in Purely Zero Dimensions'] = props[
+                'Simulate in Purely Zero Dimensions']
+        except KeyError:
+            # Catch case where old scene does not contain Simulate in Purely Zero Dimensions; just set False
+            # until the user explicitly changes this.
+            Utils.logWarning('This is an old scene; Simulate\n'
+                             'in Purely Zero Dimensions was missing; setting it to '
+                             'False. Delete and recreate your Solver\nParameters '
+                             'in CRIMSON to avoid this warning.')
+            cardiovascularModelingGroup['Simulate in Purely Zero Dimensions'] = False
 
         #############################################################################
         linearSolverGroup = self['LINEAR SOLVER']
