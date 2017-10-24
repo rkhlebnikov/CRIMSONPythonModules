@@ -20,7 +20,7 @@ class CRIMSONSolverSolverSetupManager(object):
                                          "Zero pressure": ZeroPressure.ZeroPressure,
                                          "Deformable wall": DeformableWall.DeformableWall,
                                          "Netlist": Netlist.Netlist,
-                                         "PCMRI": PCMRI.PCMRI,
+                                         "PCMRI": PCMRI.PCMRI
                                          }
         self.materialClasses = {"Deformable wall material": DeformableWallMaterial.DeformableWallMaterial,
                                 "Deformable wall material (anisotropic)": AnisoDeformableWallMaterial.AnisoDeformableWallMaterial}

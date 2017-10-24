@@ -21,7 +21,7 @@ from CRIMSONSolver.SolverStudies.FileList import FileList
 from CRIMSONSolver.SolverStudies.SolverInpData import SolverInpData
 from CRIMSONSolver.SolverStudies.Timer import Timer
 from CRIMSONSolver.BoundaryConditions import NoSlip, InitialPressure, RCR, ZeroPressure, PrescribedVelocities, \
-    DeformableWall, Netlist
+    DeformableWall, Netlist, PCMRI
 from CRIMSONSolver.Materials import MaterialData
 
 
@@ -622,6 +622,66 @@ class SolverStudy(object):
                                 numpy.array([[waveform[0, 0], steadyWaveformValue],
                                              [waveform[-1, 0], steadyWaveformValue]]))
 
+            elif is_boundary_condition_type(bc, PCMRI.PCMRI):
+                faceInfoFile = fileList['faceInfo.dat']
+
+                bctFile = fileList['bct.dat']
+                bctSteadyFile = fileList['bct_steady.dat']
+
+                if bctInfo.first:
+                    bctInfo.first = False
+                    emptyLine = ' ' * 50 + '\n'
+                    bctFile.write(emptyLine)
+                    bctSteadyFile.write(emptyLine)
+                    bctInfo.period = bc.pcmriData.getTimepoints()[-1]  # Last time point
+                else:
+                    if abs(bc.pcmriData.getTimepoints()[-1] - bctInfo.period) > 1e-5:
+                        Utils.logWarning(
+                            'Periods of waveforms used for prescribed velocities are different. RCR boundary conditions may be inconsistent - the period used is {0}'.format(
+                                bctInfo.period))
+
+                waveform = bc.pcmriData.getFlowWaveform()
+                # steadyWaveformValue = numpy.trapz(waveform[:, 1], x=waveform[:, 0]) / (waveform[-1, 0] - waveform[0, 0])
+                steadyWaveformValue = numpy.trapz(waveform[:], x=bc.pcmriData.getTimepoints()) / (waveform[-1] - waveform[0])
+
+                bctInfo.maxNTimeSteps = max(bctInfo.maxNTimeSteps, len(bc.pcmriData.getTimepoints()))
+
+                for faceId in validFaceIdentifiers(bc):
+                    supreFile.write('prescribed_velocities {0}.nbc\n'.format(faceIndicesAndFileNames[faceId][1]));
+                    faceInfoFile.write('PrescribedVelocities {0[0]} {0[1]}\n'.format(faceIndicesAndFileNames[faceId])) #PrescribedVelocities or PCMRI??
+                    bctInfo.faceIds.append(str(faceIndicesAndFileNames[faceId][0]))
+
+                supreFile.write('\n')
+
+                def writeBctWaveforms(waveform, steadyWaveformValue):
+                    smoothedFlowWaveformFile = fileList['bctFlowWaveform.dat']
+                    numpy.savetxt(smoothedFlowWaveformFile, waveform)
+
+                    # steadyFlowWaveformFile = fileList['bctFlowWaveform_steady.dat']
+                    # numpy.savetxt(steadyFlowWaveformFile,
+                    #                numpy.array([[waveform[0], steadyWaveformValue],
+                    #                 [waveform[-1], steadyWaveformValue]]) )
+
+                writeBctWaveforms(waveform, steadyWaveformValue)
+
+
+                def writeBctProfile(file):
+                    for faceId in validFaceIdentifiers(bc):
+                        for index, pointIndex in enumerate(meshData.getNodeIdsForFace(faceId)):
+                            bctInfo.totalPoints += 1
+                            file.write('{0[0]} {0[1]} {0[2]} {1}\n'.format(meshData.getNodeCoordinates(pointIndex),
+                                                                           len(bc.pcmriData.getTimepoints())))
+
+                            for timeIndex, timeStep in enumerate(bc.pcmriData.getTimepoints()):
+                                file.write('{0[0]} {0[1]} {0[2]} {1}\n'.format(bc.pcmriData.getSingleMappedPCMRIvector(index,timeIndex),
+                                                                               timeStep))
+
+                writeBctProfile(bctFile)
+                # writeBctProfile(bctSteadyFile,
+                #                 numpy.array([[waveform[0, 0], steadyWaveformValue],
+                #                              [waveform[-1, 0], steadyWaveformValue]]))
+
+
             elif is_boundary_condition_type(bc, DeformableWall.DeformableWall):
                 if initialPressure is None:
                     raise RuntimeError('Deformable wall boundary condition requires initial pressure to be defined.\n'
@@ -709,7 +769,7 @@ class SolverStudy(object):
             multidomainFile.write('#\n{0}\n#\n0\n'.format(0 if len(rcrInfo.faceIds) == 0 else 1))
 
         if not bctInfo.first:
-            bctInfo.totalPoints /= 2  # points counted twice for steady and non-steady output
+            #bctInfo.totalPoints /= 2  # points counted twice for steady and non-steady output
 
             def writeBctInfo(file, maxNTimesteps):
                 file.seek(0)

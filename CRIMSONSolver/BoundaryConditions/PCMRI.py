@@ -17,18 +17,14 @@ class PCMRI(FaceData):
     def __init__(self):
         FaceData.__init__(self)
 
-        self.originalWaveform = numpy.array([])
-        self.smoothedWaveform = numpy.array([])
-        self.firstFilteredCoef = 0
-        self.numberOfSamples = 100
         self.pcmriNodeUID=None
         self.pcmriData=None
 
-def setDataObject(self, data):  # for use in CPP code
+    def setDataObject(self, data):  # for use in CPP code
         self.pcmriData = data
 
-def setDataNodeUID(self, uid):  # for use in CPP code
+    def setDataNodeUID(self, uid):  # for use in CPP code
         self.pcmriNodeUID = uid
 
-def getDataNodeUID(self):  # for use in CPP code
+    def getDataNodeUID(self):  # for use in CPP code
         return self.pcmriNodeUID
