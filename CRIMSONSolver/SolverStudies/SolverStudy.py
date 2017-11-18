@@ -657,10 +657,10 @@ class SolverStudy(object):
                     smoothedFlowWaveformFile = fileList['bctFlowWaveform.dat']
                     numpy.savetxt(smoothedFlowWaveformFile, waveform)
 
-                    # steadyFlowWaveformFile = fileList['bctFlowWaveform_steady.dat']
-                    # numpy.savetxt(steadyFlowWaveformFile,
-                    #                numpy.array([[waveform[0], steadyWaveformValue],
-                    #                 [waveform[-1], steadyWaveformValue]]) )
+                    steadyFlowWaveformFile = fileList['bctFlowWaveform_steady.dat']
+                    numpy.savetxt(steadyFlowWaveformFile,
+                                    numpy.array([[waveform[0], steadyWaveformValue],
+                                     [waveform[-1], steadyWaveformValue]]) )
 
                 writeBctWaveforms(waveform, steadyWaveformValue)
 
@@ -677,9 +677,9 @@ class SolverStudy(object):
                                                                                timeStep))
 
                 writeBctProfile(bctFile)
-                # writeBctProfile(bctSteadyFile,
-                #                 numpy.array([[waveform[0, 0], steadyWaveformValue],
-                #                              [waveform[-1, 0], steadyWaveformValue]]))
+                writeBctProfile(bctSteadyFile,
+                                numpy.array([[waveform[0, 0], steadyWaveformValue],
+                                          [waveform[-1, 0], steadyWaveformValue]]))
 
 
             elif is_boundary_condition_type(bc, DeformableWall.DeformableWall):
@@ -769,7 +769,7 @@ class SolverStudy(object):
             multidomainFile.write('#\n{0}\n#\n0\n'.format(0 if len(rcrInfo.faceIds) == 0 else 1))
 
         if not bctInfo.first:
-            #bctInfo.totalPoints /= 2  # points counted twice for steady and non-steady output
+            bctInfo.totalPoints /= 2  # points counted twice for steady and non-steady output
 
             def writeBctInfo(file, maxNTimesteps):
                 file.seek(0)

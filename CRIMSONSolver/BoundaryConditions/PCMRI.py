@@ -28,3 +28,12 @@ class PCMRI(FaceData):
 
     def getDataNodeUID(self):  # for use in CPP code
         return self.pcmriNodeUID
+
+    def __getstate__(self):
+        odict = self.__dict__.copy()  # copy the dict
+        del odict['pcmriData']  # pcmriData shouldn't be pickled
+        return odict
+
+    def __setstate__(self, dict):
+        self.__dict__.update(dict)
+        self.pcmriData = None  # Reload classes on un-pickling
