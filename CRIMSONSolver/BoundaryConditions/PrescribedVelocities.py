@@ -12,7 +12,7 @@ class ProfileType(object):
 
 class PrescribedVelocities(FaceData):
     unique = False
-    humanReadableName = "Prescribed velocities"
+    humanReadableName = "Prescribed velocities (analytic)"
     applicableFaceTypes = [FaceType.ftCapInflow, FaceType.ftCapOutflow]
 
     def __init__(self):

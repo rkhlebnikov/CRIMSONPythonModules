@@ -11,7 +11,7 @@ class PCMRI(FaceData):
 
     '''
     unique = False
-    humanReadableName = "PCMRI"
+    humanReadableName = "Prescribed velocities (PC-MRI)"
     applicableFaceTypes = [FaceType.ftCapInflow, FaceType.ftCapOutflow]
 
     def __init__(self):
