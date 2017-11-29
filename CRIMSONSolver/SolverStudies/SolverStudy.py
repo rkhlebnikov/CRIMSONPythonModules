@@ -642,7 +642,8 @@ class SolverStudy(object):
 
                 waveform = bc.pcmriData.getFlowWaveform()
                 # steadyWaveformValue = numpy.trapz(waveform[:, 1], x=waveform[:, 0]) / (waveform[-1, 0] - waveform[0, 0])
-                steadyWaveformValue = numpy.trapz(waveform[:], x=bc.pcmriData.getTimepoints()) / (waveform[-1] - waveform[0])
+                steadyWaveformValue = numpy.trapz(waveform[:], x=bc.pcmriData.getTimepoints()) / \
+                                      (bc.pcmriData.getTimepoints()[-1] - bc.pcmriData.getTimepoints()[0])
 
                 bctInfo.maxNTimeSteps = max(bctInfo.maxNTimeSteps, len(bc.pcmriData.getTimepoints()))
 
@@ -659,8 +660,8 @@ class SolverStudy(object):
 
                     steadyFlowWaveformFile = fileList['bctFlowWaveform_steady.dat']
                     numpy.savetxt(steadyFlowWaveformFile,
-                                    numpy.array([[waveform[0], steadyWaveformValue],
-                                     [waveform[-1], steadyWaveformValue]]) )
+                                    numpy.array([[bc.pcmriData.getTimepoints()[0], steadyWaveformValue],
+                                     [bc.pcmriData.getTimepoints()[-1], steadyWaveformValue]]) )
 
                 writeBctWaveforms(waveform, steadyWaveformValue)
 
@@ -676,10 +677,11 @@ class SolverStudy(object):
                                 file.write('{0[0]} {0[1]} {0[2]} {1}\n'.format(bc.pcmriData.getSingleMappedPCMRIvector(index,timeIndex),
                                                                                timeStep))
 
+
                 writeBctProfile(bctFile)
-                writeBctProfile(bctSteadyFile,
-                                numpy.array([[waveform[0, 0], steadyWaveformValue],
-                                          [waveform[-1, 0], steadyWaveformValue]]))
+                # writeBctProfile(bctSteadyFile,
+                #                 numpy.array([[waveform[0, 0], steadyWaveformValue],
+                #                           [waveform[-1, 0], steadyWaveformValue]]))
 
 
             elif is_boundary_condition_type(bc, DeformableWall.DeformableWall):
@@ -769,7 +771,7 @@ class SolverStudy(object):
             multidomainFile.write('#\n{0}\n#\n0\n'.format(0 if len(rcrInfo.faceIds) == 0 else 1))
 
         if not bctInfo.first:
-            bctInfo.totalPoints /= 2  # points counted twice for steady and non-steady output
+            #bctInfo.totalPoints /= 2  # points counted twice for steady and non-steady output
 
             def writeBctInfo(file, maxNTimesteps):
                 file.seek(0)

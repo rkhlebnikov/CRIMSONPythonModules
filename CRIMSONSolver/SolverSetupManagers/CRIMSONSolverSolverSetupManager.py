@@ -15,12 +15,12 @@ class CRIMSONSolverSolverSetupManager(object):
         self.solverStudyClasses = {"Solver study 3D": SolverStudy}
         self.boundaryConditionClasses = {"Initial pressure": InitialPressure.InitialPressure,
                                          "No slip": NoSlip.NoSlip,
-                                         "Prescribed velocities": PrescribedVelocities.PrescribedVelocities,
+                                         "Prescribed velocities (analytic)": PrescribedVelocities.PrescribedVelocities,
                                          "RCR": RCR.RCR,
                                          "Zero pressure": ZeroPressure.ZeroPressure,
                                          "Deformable wall": DeformableWall.DeformableWall,
                                          "Netlist": Netlist.Netlist,
-                                         "PCMRI": PCMRI.PCMRI
+                                         "Prescribed velocities (PC-MRI)": PCMRI.PCMRI
                                          }
         self.materialClasses = {"Deformable wall material": DeformableWallMaterial.DeformableWallMaterial,
                                 "Deformable wall material (anisotropic)": AnisoDeformableWallMaterial.AnisoDeformableWallMaterial}
