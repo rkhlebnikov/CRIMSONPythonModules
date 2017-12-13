@@ -676,12 +676,23 @@ class SolverStudy(object):
                             for timeIndex, timeStep in enumerate(bc.pcmriData.getTimepoints()):
                                 file.write('{0[0]} {0[1]} {0[2]} {1}\n'.format(bc.pcmriData.getSingleMappedPCMRIvector(index,timeIndex),
                                                                                timeStep))
+                def writeBctProfileSteady(file, wave):
+                    for faceId in validFaceIdentifiers(bc):
+                        flowProfileGenerator = FlowProfileGenerator(0, solidModelData,
+                                                                    meshData, faceId)
+
+                        for pointIndex, flowVectorList in flowProfileGenerator.generateProfile(wave[:, 1]):
+                            bctInfo.totalPoints += 1
+                            file.write('{0[0]} {0[1]} {0[2]} {1}\n'.format(meshData.getNodeCoordinates(pointIndex),
+                                                                           wave.shape[0]))
+                            for timeStep, flowVector in enumerate(flowVectorList):
+                                file.write('{0[0]} {0[1]} {0[2]} {1}\n'.format(flowVector, wave[timeStep, 0]))
 
 
                 writeBctProfile(bctFile)
-                # writeBctProfile(bctSteadyFile,
-                #                 numpy.array([[waveform[0, 0], steadyWaveformValue],
-                #                           [waveform[-1, 0], steadyWaveformValue]]))
+                writeBctProfileSteady(bctSteadyFile,
+                                numpy.array([[bc.pcmriData.getTimepoints()[0], steadyWaveformValue],
+                                          [bc.pcmriData.getTimepoints()[-1], steadyWaveformValue]]))
 
 
             elif is_boundary_condition_type(bc, DeformableWall.DeformableWall):
@@ -771,7 +782,7 @@ class SolverStudy(object):
             multidomainFile.write('#\n{0}\n#\n0\n'.format(0 if len(rcrInfo.faceIds) == 0 else 1))
 
         if not bctInfo.first:
-            #bctInfo.totalPoints /= 2  # points counted twice for steady and non-steady output
+            bctInfo.totalPoints /= 2  # points counted twice for steady and non-steady output
 
             def writeBctInfo(file, maxNTimesteps):
                 file.seek(0)
