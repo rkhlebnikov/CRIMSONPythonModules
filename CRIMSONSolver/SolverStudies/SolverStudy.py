@@ -21,7 +21,7 @@ from CRIMSONSolver.SolverStudies.FileList import FileList
 from CRIMSONSolver.SolverStudies.SolverInpData import SolverInpData
 from CRIMSONSolver.SolverStudies.Timer import Timer
 from CRIMSONSolver.BoundaryConditions import NoSlip, InitialPressure, RCR, ZeroPressure, PrescribedVelocities, \
-    DeformableWall, Netlist, PCMRI
+    DeformableWall, Netlist, PCMRI, RAD
 from CRIMSONSolver.Materials import MaterialData
 
 

@@ -1,6 +1,6 @@
 from CRIMSONSolver.BoundaryConditionSets.BoundaryConditionSet import BoundaryConditionSet
 from CRIMSONSolver.BoundaryConditions import InitialPressure, NoSlip, PrescribedVelocities, RCR, ZeroPressure, \
-    DeformableWall, Netlist, PCMRI
+    DeformableWall, Netlist, PCMRI, RAD
 from CRIMSONSolver.SolverParameters.SolverParameters3D import SolverParameters3D
 from CRIMSONSolver.SolverStudies.SolverStudy import SolverStudy
 from CRIMSONSolver.Materials import DeformableWallMaterial, AnisoDeformableWallMaterial
@@ -20,7 +20,8 @@ class CRIMSONSolverSolverSetupManager(object):
                                          "Zero pressure": ZeroPressure.ZeroPressure,
                                          "Deformable wall": DeformableWall.DeformableWall,
                                          "Netlist": Netlist.Netlist,
-                                         "Prescribed velocities (PC-MRI)": PCMRI.PCMRI
+                                         "Prescribed velocities (PC-MRI)": PCMRI.PCMRI,
+                                         "Reaction-advection diffusion (RAD)": RAD.RAD
                                          }
         self.materialClasses = {"Deformable wall material": DeformableWallMaterial.DeformableWallMaterial,
                                 "Deformable wall material (anisotropic)": AnisoDeformableWallMaterial.AnisoDeformableWallMaterial}
