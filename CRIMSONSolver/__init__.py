@@ -4,9 +4,10 @@ import BoundaryConditionSets
 import SolverParameters
 import SolverStudies
 import SolverSetupManagers
+import ScalarProblem
 
 __all__ = ['BoundaryConditions', 'Materials', 'BoundaryConditionSets', 'SolverParameters', 'SolverStudies',
-           'SolverSetupManagers']
+           'SolverSetupManagers', 'ScalarProblem']
 
 import inspect
 

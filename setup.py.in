@@ -60,7 +60,8 @@ setup(name='CRIMSON',
                 'CRIMSONSolver.SolverSetupManagers',
                 'CRIMSONSolver.SolverParameters',
                 'CRIMSONSolver.SolverStudies',
-                'CRIMSONSolver.Materials'
+                'CRIMSONSolver.Materials',
+				'CRIMSONSolver.ScalarProblem'
                 ],
       py_modules=['upgradeScene', 'upgradeScene2'],
       data_files = data_files_in

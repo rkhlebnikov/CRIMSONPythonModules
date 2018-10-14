@@ -21,8 +21,9 @@ from CRIMSONSolver.SolverStudies.FileList import FileList
 from CRIMSONSolver.SolverStudies.SolverInpData import SolverInpData
 from CRIMSONSolver.SolverStudies.Timer import Timer
 from CRIMSONSolver.BoundaryConditions import NoSlip, InitialPressure, RCR, ZeroPressure, PrescribedVelocities, \
-    DeformableWall, Netlist, PCMRI, RAD
+    DeformableWall, Netlist, PCMRI
 from CRIMSONSolver.Materials import MaterialData
+from CRIMSONSolver.ScalarProblem import Scalar, ScalarProblem, ScalarBC
 
 
 # A helper class providing lazily-evaluated quantities for material computation
@@ -108,6 +109,12 @@ class SolverStudy(object):
 
     def setBoundaryConditionSetNodeUIDs(self, uids):
         self.boundaryConditionSetNodeUIDs = uids
+
+    def getScalarProblemNodeUIDs(self):
+        return self.scalarProblemNodeUIDs
+
+    def setScalarProblemNodeUIDs(self, uids):
+        self.scalarProblemNodeUIDs = uids
 
     def getMaterialNodeUIDs(self):
         if 'materialNodeUIDs' not in self.__dict__:
