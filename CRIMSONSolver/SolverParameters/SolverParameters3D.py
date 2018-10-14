@@ -78,6 +78,15 @@ class SolverParameters3D(PropertyStorage):
                 ]
             },
             {
+                "Simulation parameters for scalar problem":
+                [
+                    {
+                        "Residual criteria": 0.001,
+                        "attributes": {"minimum": 0.0}
+                    },
+                ]
+            },
+            {
                 "Output parameters":
                 [
                     {
