@@ -25,7 +25,7 @@ class CRIMSONSolverSolverSetupManager(object):
                                          }
         self.materialClasses = {"Deformable wall material": DeformableWallMaterial.DeformableWallMaterial,
                                 "Deformable wall material (anisotropic)": AnisoDeformableWallMaterial.AnisoDeformableWallMaterial}
-        self.scalarProblemClasses = {"Scalar problem": ScalarProblem.ScalarProblem}
+        self.scalarProblemClasses = {"Scalar problem set": ScalarProblem.ScalarProblem}
         self.scalarClasses = {"Scalar": Scalar.Scalar}
         self.scalarBCClasses = {"Scalar boundary condition": ScalarBC.ScalarBC}
 

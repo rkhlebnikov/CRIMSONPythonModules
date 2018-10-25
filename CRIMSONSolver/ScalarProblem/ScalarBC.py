@@ -14,17 +14,8 @@ class ScalarBC(FaceData):
     def __init__(self):
         FaceData.__init__(self)
         #self.type = BCType.DoNothing;
-        self.type = "Do Nothing";
-        self.value = 0.0;
-        self.properties = [
-            {
-                "Boundary condition type": BCType.DoNothing,
-                "attributes": {"enumNames": BCType.enumNames}
-            },
-            {
-                "Value": 0.0
-            }
-        ]
+        self.type = "Do Nothing"
+        self.value = {0.0, 0.0}
 
     def setType(self, type):  # for use in CPP code
         self.type = type
@@ -37,3 +28,4 @@ class ScalarBC(FaceData):
 
     def getValue(self):  # for use in CPP code
         return self.value
+
