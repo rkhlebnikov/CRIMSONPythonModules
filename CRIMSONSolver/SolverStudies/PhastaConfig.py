@@ -49,6 +49,11 @@ restartConfig = PhastaConfig([
         [
             PhastaConfig.Field('displacement_ref', 0, 3),
         ]),
+
+    PhastaConfig.ArrayDescriptor('custom_error_indicator', numpy.float64, True,
+        [
+            PhastaConfig.Field('custom_error_indicator', 0, 1),
+        ]),
     # Todo: WSS
 ])
 
