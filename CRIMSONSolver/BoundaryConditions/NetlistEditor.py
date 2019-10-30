@@ -42,6 +42,7 @@ else:
     class NetlistEditor(object):
         def __init__(self, netlistBC):
             self.netlistBC = netlistBC
+            self.currentlySelectedRow = None
 
             uiPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui")
             uiFileName = os.path.join(uiPath, "NetlistBCEditorWidget.ui")
@@ -67,7 +68,9 @@ else:
 
             self.fileContentsViewer = self.ui.findChild(PythonQt.QtCore.QObject, "scriptContestTextEdit")
             self.scriptListTable = self.ui.findChild(PythonQt.QtCore.QObject, "scriptListTable")
-            self.scriptListTable.connect('currentCellChanged(int, int, int, int)', self.showContents)
+            self.scriptListTable.connect('currentCellChanged(int, int, int, int)',
+                                         self.updateRowSelectionAndShowContents)
+            self.scriptListTable.connect('cellClicked(int, int)', self.updateSelectedRow)
 
             self.recreateSavedState()
 
@@ -75,7 +78,8 @@ else:
             return self.ui
 
         def launchEditor(self):
-            netlistEditorExecutablePathWithoutExtension = os.path.join(PythonQt.Qt.QApplication.applicationDirPath(), 'CRIMSONBCT')
+            netlistEditorExecutablePathWithoutExtension = os.path.join(PythonQt.Qt.QApplication.applicationDirPath(),
+                                                                       'CRIMSONBCT')
             # for different operating systems:
             if os.path.isfile(netlistEditorExecutablePathWithoutExtension):
                 executablePathToRun = netlistEditorExecutablePathWithoutExtension
@@ -83,9 +87,9 @@ else:
                 executablePathToRun = netlistEditorExecutablePathWithoutExtension + '.exe'
             print executablePathToRun
             subprocess.Popen([executablePathToRun])
-            
-            #subprocess.call(['D:\\Dev\\QSapecNG-CrimsonBCT-Git\\CrimsonBctGit\\bin\\Debug\\RUN_CRIMSONBCT.bat'])
-            #print "WARNING TO DEVS - call to CRIMSON Netlist Editor is in debug mode!"
+
+            # subprocess.call(['D:\\Dev\\QSapecNG-CrimsonBCT-Git\\CrimsonBctGit\\bin\\Debug\\RUN_CRIMSONBCT.bat'])
+            # print "WARNING TO DEVS - call to CRIMSON Netlist Editor is in debug mode!"
 
         def loadCircuit(self):
             fileName = self.getDatFileName("Load Netlist circuit description")
@@ -142,7 +146,7 @@ else:
             except:
                 return False
 
-        def addLoadedFileInfoToTable(self, fileName, scriptType, selectNewRow = True):
+        def addLoadedFileInfoToTable(self, fileName, scriptType, selectNewRow=True):
             self.scriptListTable.setSortingEnabled(False)
             row = self.scriptListTable.rowCount
             self.scriptListTable.insertRow(row)
@@ -151,7 +155,7 @@ else:
             if selectNewRow:
                 self.scriptListTable.selectRow(row)
                 self.scriptListTable.setCurrentCell(row, 0)
-                self.showContents(row) # Force update
+                self.showContents(row)  # Force update
             self.scriptListTable.setSortingEnabled(True)
 
         def getDatFileName(self, dialogTitle):
@@ -182,6 +186,14 @@ else:
                     return None
             return fileName
 
+        def updateSelectedRow(self, row, column):
+            self.currentlySelectedRow = row
+            # not using column here, but you could add it if needed later...
+
+        def updateRowSelectionAndShowContents(self, row):
+            self.currentlySelectedRow = row
+            self.showContents(row)
+
         def showContents(self, row):
             if row >= 0:
                 self.fileContentsViewer.setText(self.netlistBC.getFile(self.scriptListTable.item(row, 1).text()))
@@ -189,15 +201,18 @@ else:
                 self.fileContentsViewer.setText('')
 
         def removeSelected(self):
-            persistentIndices = [PythonQt.QtCore.QPersistentModelIndex(x) for x in self.scriptListTable.selectionModel().selectedRows()]
-            for index in persistentIndices:
-                self.netlistBC.removeFile(self.scriptListTable.item(index.row(), 1).text())
-                self.scriptListTable.removeRow(index.row())
+            if self.currentlySelectedRow is not None:
+                self.netlistBC.removeFile(self.scriptListTable.item(self.currentlySelectedRow, 1).text())
+                self.scriptListTable.removeRow(self.currentlySelectedRow)
+
+            self.currentlySelectedRow = None  # reset it to None as it is now invalid due to the number of rows changing
 
         def recreateSavedState(self):
             if self.netlistBC.getNetlistCircuitFileName():
-               self.addLoadedFileInfoToTable(self.netlistBC.getNetlistCircuitFileName(), NetlistFileTypes.CircuitDescriptionDat, False)
+                self.addLoadedFileInfoToTable(self.netlistBC.getNetlistCircuitFileName(),
+                                              NetlistFileTypes.CircuitDescriptionDat, False)
             for dynamicAdjustmentFileName in self.netlistBC.getCircuitDynamicAdjustmentFiles():
-               self.addLoadedFileInfoToTable(dynamicAdjustmentFileName, NetlistFileTypes.DynamicAdjustmentPython, False)
+                self.addLoadedFileInfoToTable(dynamicAdjustmentFileName, NetlistFileTypes.DynamicAdjustmentPython,
+                                              False)
             for additionalDatFile in self.netlistBC.getCircuitAdditionalDataFiles():
-               self.addLoadedFileInfoToTable(additionalDatFile, NetlistFileTypes.AdditionalData, False)
+                self.addLoadedFileInfoToTable(additionalDatFile, NetlistFileTypes.AdditionalData, False)
