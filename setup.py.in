@@ -26,16 +26,8 @@ def recursiveGatherAllSubfolderContents(root):
 
 # Working dir at runtime will be your system's equivalent to I:\crmsn\sb\CMakeExternals\Source\PythonModules
 flowsolver_files = gatherDirectoryContents('CRIMSONSolver/SolverStudies/flowsolver')
-basic_control_scripts_files = gatherDirectoryContents('CRIMSONSolver/SolverStudies/flowsolver/basicControlScripts')
-flowsolver_config_files = gatherDirectoryContents('CRIMSONSolver/SolverStudies/flowsolver/flowsolverConfig')
-python_libs = gatherDirectoryContents('CRIMSONSolver/SolverStudies/flowsolver/pythonLibs')
-
-python_libs_data = recursiveGatherAllSubfolderContents('CRIMSONSolver/SolverStudies/flowsolver/pythonLibs')
 
 data_files_in = [('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver', flowsolver_files),
-                ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver/flowsolverConfig', flowsolver_config_files),
-                ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver/basicControlScripts', basic_control_scripts_files),
-                ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver/pythonLibs', python_libs),
                 ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies', ['CRIMSONSolver/SolverStudies/${presolver_executable_filename}',]),
                 ('${python_lib_folder}site-packages/CRIMSONSolver/BoundaryConditions/ui', ['CRIMSONSolver/BoundaryConditions/ui/PrescribedVelocitiesBoundaryConditionEditorWidget.ui',]),
                 ('${python_lib_folder}site-packages/CRIMSONSolver/BoundaryConditions/ui', ['CRIMSONSolver/BoundaryConditions/ui/NetlistBCEditorWidget.ui',]),
@@ -48,7 +40,7 @@ data_files_in = [('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies
                 ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/delete.png',]),
                 ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/open.png',]),
                 ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/save.png',]),
-                ] + python_libs_data
+                ] 
 
 setup(name='CRIMSON',
       version='1.0',
