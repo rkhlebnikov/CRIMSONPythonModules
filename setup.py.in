@@ -24,13 +24,23 @@ def recursiveGatherAllSubfolderContents(root):
     additional_data_files.append(this_subdirectory_contents)
   return additional_data_files
 
-# Working dir at runtime will be your system's equivalent to I:\crmsn\sb\CMakeExternals\Source\PythonModules
-flowsolver_files = gatherDirectoryContents('CRIMSONSolver/SolverStudies/flowsolver')
-basic_control_scripts_files = gatherDirectoryContents('CRIMSONSolver/SolverStudies/flowsolver/basicControlScripts')
-flowsolver_config_files = gatherDirectoryContents('CRIMSONSolver/SolverStudies/flowsolver/flowsolverConfig')
-python_libs = gatherDirectoryContents('CRIMSONSolver/SolverStudies/flowsolver/pythonLibs')
+print('Using ${python_lib_folder} as python_lib_folder.')
 
-python_libs_data = recursiveGatherAllSubfolderContents('CRIMSONSolver/SolverStudies/flowsolver/pythonLibs')
+# This is where the cmake script for CRIMSON checks out the repo to; the root of the repository is here.
+flowSolverRepoFolder = 'CRIMSONSolver/SolverStudies/flowsolver'
+
+# This folder contains the dev/ and usr/ folders.
+flowSolverMainFolder = os.path.join(flowSolverRepoFolder, 'flowsolver')
+
+print('Expecting flowsolver main folder to be at ' + flowSolverMainFolder)
+
+# Working dir at runtime will be your system's equivalent to I:\crmsn\sb\CMakeExternals\Source\PythonModules
+flowsolver_files = gatherDirectoryContents(flowSolverMainFolder)
+basic_control_scripts_files = gatherDirectoryContents(os.path.join(flowSolverMainFolder, 'basicControlScripts'))
+flowsolver_config_files = gatherDirectoryContents(os.path.join(flowSolverMainFolder, 'flowsolverConfig'))
+python_libs = gatherDirectoryContents(os.path.join(flowSolverMainFolder, 'pythonLibs'))
+
+python_libs_data = recursiveGatherAllSubfolderContents(os.path.join(flowSolverMainFolder, 'pythonLibs'))
 
 data_files_in = [('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver', flowsolver_files),
                 ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver/flowsolverConfig', flowsolver_config_files),
