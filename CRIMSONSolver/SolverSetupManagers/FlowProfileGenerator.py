@@ -10,15 +10,10 @@ def parabolicProfileFunction(distance, maxDistance):
     order = 2
     return (order + 2) / order * (1 - math.pow(1 - distance / maxDistance, order))
 
-def womersleyProfileFunction(distance, maxDistance):
-    # Not implemented yet
-    return parabolicProfileFunction(distance, maxDistance)
-
 
 class FlowProfileGenerator(object):
     profileFunctions = {ProfileType.Plug: plugProfileFunction,
-                        ProfileType.Parabolic: parabolicProfileFunction,
-                        ProfileType.Womersley: womersleyProfileFunction}
+                        ProfileType.Parabolic: parabolicProfileFunction}
 
     def __init__(self, profileType, solidModelData, meshData, faceIdentifier):
         self.faceNormal = solidModelData.getFaceNormal(faceIdentifier)

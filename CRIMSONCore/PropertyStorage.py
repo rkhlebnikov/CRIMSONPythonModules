@@ -45,8 +45,11 @@ class PropertyAccessor(object):
             raise TypeError("It is forbidden to modify the property lists")
 
         if type(propertyValue) != type(value):
-            raise TypeError("It is forbidden to change the type of properties. Expected " + type(
-                propertyValue).__name__ + ", received " + type(value).__name__)
+            if isinstance(propertyValue, str):
+                value = str(value)
+            else:
+                raise TypeError("It is forbidden to change the type of properties. Expected " + type(
+                    propertyValue).__name__ + ", received " + type(value).__name__)
 
         propertyList[index][valueKey] = value
 

@@ -6,8 +6,8 @@ from CRIMSONSolver.BoundaryConditions.PrescribedVelocitiesEditor import Prescrib
 from PythonQt.CRIMSON import FaceType
 
 class ProfileType(object):
-    enumNames = ["Parabolic", "Womersley", "Plug"]
-    Parabolic, Womersley, Plug = range(3)
+    enumNames = ["Parabolic", "Plug"]
+    Parabolic, Plug = range(2)
 
 
 class PrescribedVelocities(FaceData):
@@ -37,6 +37,7 @@ class PrescribedVelocities(FaceData):
         self.smoothedWaveform = numpy.array([])
         self.firstFilteredCoef = 0
         self.numberOfSamples = 100
+        self.smoothingDisabled = False
 
         self.editor = None
 

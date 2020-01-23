@@ -1,13 +1,14 @@
 from PythonQt.CRIMSON import FaceType
 from collections import OrderedDict
 from CRIMSONSolver.SolverParameters.SolverParameters3D import CouplingType, SolverType
+from CRIMSONSolver.ScalarProblem.Scalar import Scalar
 from PythonQt.CRIMSON import Utils
 
 __author__ = 'rk13'
 
 
 class SolverInpData():
-    def __init__(self, solverParametersData, faceIndicesAndFileNames):
+    def __init__(self, solverParametersData, faceIndicesAndFileNames, scalars):
         self.data = OrderedDict()
 
         getFaceIds = lambda cond: [str(faceIdAndName[0]) for faceIdentifier, faceIdAndName in
@@ -18,6 +19,13 @@ class SolverInpData():
         wallShearStressSurfaceIds = getFaceIds(lambda faceType: faceType == FaceType.ftWall)
 
         props = solverParametersData.getProperties()
+
+        isScalar = (len(scalars)>0)
+        if isScalar:
+            diffusivities = ""
+            for scalar in scalars:
+                diffusivities = diffusivities + str(scalar.getProperties()["Diffusion coefficient"]) + " "
+
 
         #############################################################################
         solutionControlGroup = self['SOLUTION CONTROL']
@@ -40,6 +48,8 @@ class SolverInpData():
         materialPropertiesGroup = self['MATERIAL PROPERTIES']
         materialPropertiesGroup['Viscosity'] = props['Viscosity']
         materialPropertiesGroup['Density'] = props['Density']
+        if isScalar:
+            materialPropertiesGroup['Scalar Diffusivity'] = diffusivities
 
         #############################################################################
         cardiovascularModelingGroup = self['CARDIOVASCULAR MODELING PARAMETERS']
@@ -48,6 +58,10 @@ class SolverInpData():
 
         cardiovascularModelingGroup['Residual Control'] = props['Residual control']
         cardiovascularModelingGroup['Residual Criteria'] = props['Residual criteria']
+        if isScalar:
+            cardiovascularModelingGroup['Scalar Residual Control'] = props['Scalar residual control']
+            for index in enumerate(scalars):
+                cardiovascularModelingGroup['Scalar {0} Solver Tolerance'.format(index+1)] = props['Scalar residual criteria']
         cardiovascularModelingGroup['Minimum Required Iterations'] = props['Minimum required iterations']
 
         cardiovascularModelingGroup['Number of Coupled Surfaces'] = len(coupledSurfaceIds)
@@ -71,9 +85,22 @@ class SolverInpData():
 
         #############################################################################
         linearSolverGroup = self['LINEAR SOLVER']
-        nSteps = props['Step construction']
-        linearSolverGroup['Step Construction'] = '{0} # this is the standard {1} iteration'.format('0 1 ' * nSteps,
-                                                                                                   nSteps)
+        if isScalar:
+            linearSolverGroup['Solve Scalars'] = len(scalars)
+            linearSolverGroup['Step Construction'] = props['Step construction sequence']
+            Utils.logInformation(props['Step construction sequence'])
+        else:
+            try:
+                nSteps = props['Step construction (no. of solves and updates)']
+
+            except KeyError:
+                # Catch case where old scene does not contain new naming of Step Construction
+                Utils.logWarning('This is an old scene; Checking\n'
+                                 'old naming convention.')
+                nSteps = props['Step construction']
+
+            linearSolverGroup['Step Construction'] = '{0} # this is the standard {1} iteration'.format(
+                '0 1 ' * nSteps, nSteps)
         linearSolverGroup['Solver Type'] = SolverType.enumNames[props['Solver type']]
 
         #############################################################################

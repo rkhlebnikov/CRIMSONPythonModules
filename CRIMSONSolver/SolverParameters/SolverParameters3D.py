@@ -61,7 +61,7 @@ class SolverParameters3D(PropertyStorage):
                         "attributes": {"minimum": 1}
                     },
                     {
-                        "Step construction": 5,
+                        "Step construction (no. of solves and updates)": 5,
                         "attributes": {"minimum": 1}
                     },
                     {
@@ -81,10 +81,10 @@ class SolverParameters3D(PropertyStorage):
                 "Scalar simulation parameters":
                 [
                     {
-                        "Residual control": True,
+                        "Scalar residual control": True,
                     },
                     {
-                        "Residual criteria": 0.001,
+                        "Scalar residual criteria": 0.001,
                         "attributes": {"minimum": 0.0}
                     },
                     {

@@ -9,7 +9,7 @@ class BCType(object):
 class ScalarBC(FaceData):
     unique = False
     humanReadableName = "Scalar Boundary Condition"
-    applicableFaceTypes = [FaceType.ftCapInflow, FaceType.ftCapOutflow]
+    applicableFaceTypes = [FaceType.ftCapInflow, FaceType.ftCapOutflow, FaceType.ftWall]
 
     def __init__(self):
         FaceData.__init__(self)

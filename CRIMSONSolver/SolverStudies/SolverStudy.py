@@ -765,34 +765,46 @@ class SolverStudy(object):
                 supreFile.write('deformable_solve\n\n')
 
         # Write scalar block
-        supreFile.write('number_of_scalar_rad_species {0}\n'.format(len(scalars)))
-        supreFile.write('\n')
-
-        for index, scalar in enumerate(scalars):
-            supreFile.write('set_scalar_initial_value {0} {1}\n'.format(index+1,scalar.getProperties()["Initial value"]))
-        supreFile.write('\n')
-
-        faceTypeSufixes = {FaceType.ftCapInflow: '.nbc',
-                            FaceType.ftCapOutflow: '.nbc',
-                            FaceType.ftWall: '.ebc'}
-
-        bcCommand = {"Dirichlet": 'set_scalar_dirichlet_value',
-                    "Neumann": 'set_scalar_flux',
-                     "Do Nothing": 'what_to_write_here?',
-                     "Robin": 'set_scalar_dirichlet_value'}
-
-        for i in xrange(solidModelData.getNumberOfFaceIdentifiers()):
-            faceId = solidModelData.getFaceIdentifier(i)
-            for index, scalar in enumerate(scalars):
-                supreFile.write(bcCommand[scalar.BCs[faceId].type] + ' {0}{1} {2} {3}\n'.format
-                    (faceIndicesAndFileNames[faceId][1],faceTypeSufixes[faceId.faceType],index+1,
-                     scalar.BCs[faceId].value[0]))
-                if scalar.BCs[faceId].type == "Robin":
-                    supreFile.write('set_scalar_flux {0}{1} {2} {3}\n'.format
-                    (faceIndicesAndFileNames[faceId][1], faceTypeSufixes[faceId.faceType], index + 1,
-                     scalar.BCs[faceId].value[1]))
+        if len(scalars) > 0:
+            supreFile.write('number_of_scalar_rad_species {0}\n'.format(len(scalars)))
             supreFile.write('\n')
-        supreFile.write('\n')
+
+            for index, scalar in enumerate(scalars):
+                supreFile.write('set_scalar_initial_value {0} {1}\n'.format(index+1,scalar.getProperties()["Initial value"]))
+            supreFile.write('\n')
+
+            faceTypeSufixes = {"Dirichlet": '.nbc',
+                               "Neumann": '.ebc',
+                               "Do Nothing": '.ebc'}
+
+            bcCommand = {"Dirichlet": 'set_scalar_dirichlet_value',
+                        "Neumann": 'set_scalar_flux',
+                         "Do Nothing": 'set_scalar_donothing',
+                         "Robin": 'set_scalar_dirichlet_value'}
+
+            for i in xrange(solidModelData.getNumberOfFaceIdentifiers()):
+                faceId = solidModelData.getFaceIdentifier(i)
+                for index, scalar in enumerate(scalars):
+                    supreFile.write(bcCommand[scalar.BCs[faceId].type] + ' {0}{1} {2}'.format
+                        (faceIndicesAndFileNames[faceId][1],faceTypeSufixes[scalar.BCs[faceId].type],index+1))
+                    if scalar.BCs[faceId].type == "Do Nothing":
+                        supreFile.write('\n')
+                    else:
+                        supreFile.write(' {0}\n'.format(scalar.BCs[faceId].value[0]))
+                    if scalar.BCs[faceId].type == "Robin":
+                        supreFile.write('set_scalar_flux {0}{1} {2} {3}\n'.format
+                        (faceIndicesAndFileNames[faceId][1], faceTypeSufixes[scalar.BCs[faceId].type], index + 1,
+                         scalar.BCs[faceId].value[1]))
+                supreFile.write('\n')
+            supreFile.write('\n')
+
+            scalarGroup = solverInpData['SCALAR REACTION COEFFICIENTS']
+            for index, scalar in enumerate(scalars):
+                coeffs = ""
+                for index2, coeff in enumerate(scalar.coefficients):
+                    coeffs = coeffs + str(scalar.coefficients[index2]) + " "
+                # scalarGroup['Scalar {0} Reaction Term Monomial Weights'.format(index)] = ' '.join(str(scalar.coefficients))
+                scalarGroup['Scalar {0} Reaction Term Monomial Weights'.format(index)] = coeffs
 
         # Finalize
         if len(rcrInfo.faceIds) > 0:
