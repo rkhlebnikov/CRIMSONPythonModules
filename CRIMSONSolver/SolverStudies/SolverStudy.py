@@ -320,21 +320,34 @@ class SolverStudy(object):
             else:
                 Utils.logInformation(s)
 
+    # See https://crimsonpythonmodules.readthedocs.io/en/latest/concepts.html
+    # for more documentation about functions that operate on meshData.
     def _writeAdjacency(self, meshData, fileList):
         # node and element indices are 0-based for presolver adjacency (!)
         outFileAdjacency = fileList[os.path.join('presolver', 'the.xadj')]
 
         xadjString = 'xadj: {0}\n'.format(meshData.getNElements() + 1)
         outFileAdjacency.write(xadjString)
+
         # reserve space in the beginning of file
         outFileAdjacency.write(' ' * 50 + '\n')
 
+        # where the.xadj files are in the form
+        # xadj: <numberOfElements>
+        #   note that this is necessary to find the "second" section of the file
+        # adjncy: <running total number of adjancent faces?>
+
+        #Why is this named curIndex? looks more like the total number of faces with connections
         curIndex = 0
+
+        # Part 1 of file: Write the running total number of faces with connections? Iterating through every single element
         outFileAdjacency.write('0\n')
         for i in xrange(meshData.getNElements()):
+            #note: getAdjacentElements returns a list of element indexes that are adjacent to element index i
             curIndex += len(meshData.getAdjacentElements(i))
             outFileAdjacency.write('{0}\n'.format(curIndex))
 
+        # Part 2 of file: write the adjacent element indexes for each element
         for i in xrange(meshData.getNElements()):
             for adjacentId in meshData.getAdjacentElements(i):
                 outFileAdjacency.write('{0}\n'.format(adjacentId))
@@ -347,6 +360,8 @@ class SolverStudy(object):
 
         for i in xrange(meshData.getNElements()):
             # node and element indices are 1-based for presolver
+            # every line in this file is in the form <elementIndex> <point1> <point2> <point3> <point4>,
+            # where <elementIndex> identifies a tetrahedron in the mesh and point1-4 are the vertex indexes of the selected tetrahedron.
             outFileConnectivity.write(
                 '{0} {1[0]} {1[1]} {1[2]} {1[3]}\n'.format(i + 1, [x + 1 for x in meshData.getElementNodeIds(i)]))
 
@@ -355,6 +370,8 @@ class SolverStudy(object):
 
         for i in xrange(meshData.getNNodes()):
             # node indices are 1-based for presolver
+            # every line in this file is in the form <nodeIndex> <nodeX> <nodeY> <nodeZ>,
+            # where nodeIndex identifies a node (vertex) and nodeX/Y/Z are the coordinates of the node.
             outFileCoordinates.write('{0} {1[0]} {1[1]} {1[2]}\n'.format(i + 1, meshData.getNodeCoordinates(i)))
 
     def _writeNbc(self, meshData, faceIdentifiers, outputFile):
@@ -363,6 +380,9 @@ class SolverStudy(object):
         for faceIdentifier in faceIdentifiers:
             nodeIndices.update(meshData.getNodeIdsForFace(faceIdentifier))
 
+        # where entries in nbc files are in the form <nodeIndex>,
+        # where I think <nodeIndex> is a vertex index of a face in <faceIndentifiers>,
+        # and the file in total is the set of all nodes (vertexes) in the set of faces.
         for i in sorted(nodeIndices):
             outputFile.write('{0}\n'.format(i + 1))  # Node indices are 1-based for presolver
 
@@ -370,6 +390,8 @@ class SolverStudy(object):
         faceIndicesInFile = []
         for faceIdentifier in faceIdentifiers:
             for info in meshData.getMeshFaceInfoForFace(faceIdentifier):
+                # where entries in ebc files are in the form <elementIndex> <faceIndex> <node1Index> <node2Index> <node3Index>
+                # where <node1-3index> are the nodes of the (triangular) face <faceIndex> of (tetrahedral) element <elementIndex> 
                 l = '{0}\n'.format(
                     ' '.join(str(x + 1) for x in info))  # element and node indices are 1-based for presolver
                 outputFile.write(l)
@@ -401,6 +423,11 @@ class SolverStudy(object):
     def _writeSolverSetup(self, solverInpData, fileList):
         solverInpFile = fileList['solver.inp', 'wb']
 
+        # Where solver.inp is data separated by categories, where catagories are in the form:
+        #   #<CATEGORY NAME>
+        #   #{
+        #       SomeEntry = value
+        #   #}
         for category, values in sorted(solverInpData.data.iteritems()):
             solverInpFile.write('\n\n# {0}\n# {{\n'.format(category))
             for kv in values.iteritems():
@@ -476,6 +503,19 @@ class SolverStudy(object):
         bcCompare = lambda l, r: \
             cmp([bcProcessingPriorities.get(l.__class__.__name__, 1), l.__class__.__name__],
                 [bcProcessingPriorities.get(r.__class__.__name__, 1), r.__class__.__name__])
+
+        # Where the the.supre file is in the form:
+        # <presolver command> <parameter>
+        #
+        # For many command types, it's <command> <fileName>
+        # the presolver has a lookup table `cmd_table` in <repositoryRoot>\Presolver\cmd.cxx 
+        # that associates command strings with functions.
+        #
+        # the.supre serves as the top level configuration file for the presolver.
+        # 
+        # In addition to specifying input data, the.supre also 
+        # defines all input and output operations for the presolver.
+        # e.g., the end result of the presolver may be to write geombc.dat.1 and restart.0.1
 
         for bc in sorted(boundaryConditions, cmp=bcCompare):
             if is_boundary_condition_type(bc, NoSlip.NoSlip):
