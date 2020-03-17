@@ -1,10 +1,17 @@
 from distutils.core import setup
 import os
 
+#%% CMake configuration constants
+# [AJM] I think I would rather put all of the cmake stuff up here and then use python code to interperet it, rather than having cmake invade the whole script
+cmake_package_flowsolver = '${PACKAGE_FLOWSOLVER}'
+cmake_enable_flowsolver = (cmake_package_flowsolver == 'ON')
+
+#%% 
 
 def gatherDirectoryContents(directory):
   fullFilePaths = [os.path.join(directory, filename) for filename in os.listdir(directory)]
   files = [fullFilename for fullFilename in fullFilePaths if os.path.isfile(fullFilename)]
+
   return files
 
 def getAllSubdirectoryNames(root):
@@ -12,6 +19,7 @@ def getAllSubdirectoryNames(root):
   for (path, directories, filenames) in os.walk(root):
     for directory in directories:
       allSubdirectoryNames.append(os.path.join(path, directory))
+
   return allSubdirectoryNames
 
 def recursiveGatherAllSubfolderContents(root):
@@ -22,43 +30,56 @@ def recursiveGatherAllSubfolderContents(root):
     directory_contents = [os.path.abspath(file_in_directory) for file_in_directory in gatherDirectoryContents(subdirectory)]
     this_subdirectory_contents = (subdirectory_placeholder, directory_contents)
     additional_data_files.append(this_subdirectory_contents)
+
   return additional_data_files
+
+def getFlowsolverPaths():
+  # This is where the cmake script for CRIMSON checks out the repo to; the root of the repository is here.
+  flowSolverRepoFolder = 'CRIMSONSolver/SolverStudies/flowsolver'
+
+  # This folder contains the dev/ and usr/ folders.
+  flowSolverMainFolder = os.path.join(flowSolverRepoFolder, 'flowsolver')
+
+  print('Expecting flowsolver main folder to be at ' + flowSolverMainFolder)
+
+  # Working dir at runtime will be your system's equivalent to I:\crmsn\sb\CMakeExternals\Source\PythonModules
+  flowsolver_files              = gatherDirectoryContents(flowSolverMainFolder)
+  
+  basic_control_scripts_files   = gatherDirectoryContents(os.path.join(flowSolverMainFolder, 'basicControlScripts'))
+  flowsolver_config_files       = gatherDirectoryContents(os.path.join(flowSolverMainFolder, 'flowsolverConfig'))
+  python_libs                   = gatherDirectoryContents(os.path.join(flowSolverMainFolder, 'pythonLibs'))
+
+  python_libs_data = recursiveGatherAllSubfolderContents(os.path.join(flowSolverMainFolder, 'pythonLibs'))
+
+  flowsolver_paths = [
+                    ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver',                      flowsolver_files),
+                    ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver/flowsolverConfig',     flowsolver_config_files),
+                    ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver/basicControlScripts',  basic_control_scripts_files),
+                    ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver/pythonLibs',           python_libs),
+                  ] + python_libs_data
+  
+  return flowsolver_paths
 
 print('Using ${python_lib_folder} as python_lib_folder.')
 
-# This is where the cmake script for CRIMSON checks out the repo to; the root of the repository is here.
-flowSolverRepoFolder = 'CRIMSONSolver/SolverStudies/flowsolver'
+data_files_in = [
+                  ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies',               ['CRIMSONSolver/SolverStudies/${presolver_executable_filename}',]),
+                  ('${python_lib_folder}site-packages/CRIMSONSolver/BoundaryConditions/ui',       ['CRIMSONSolver/BoundaryConditions/ui/PrescribedVelocitiesBoundaryConditionEditorWidget.ui',]),
+                  ('${python_lib_folder}site-packages/CRIMSONSolver/BoundaryConditions/ui',       ['CRIMSONSolver/BoundaryConditions/ui/NetlistBCEditorWidget.ui',]),
+                  ('${python_lib_folder}site-packages/CRIMSONSolver/BoundaryConditions/ui/icons', ['CRIMSONSolver/BoundaryConditions/ui/icons/open.png',]),
+                  ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui',                ['CRIMSONSolver/Materials/ui/MaterialEditorWidget.ui',]),
+                  ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui',                ['CRIMSONSolver/Materials/ui/SingleMaterialEditorWidget.ui',]),
+                  ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons',          ['CRIMSONSolver/Materials/ui/icons/after.png',]),
+                  ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons',          ['CRIMSONSolver/Materials/ui/icons/before.png',]),
+                  ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons',          ['CRIMSONSolver/Materials/ui/icons/circle.png',]),
+                  ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons',          ['CRIMSONSolver/Materials/ui/icons/delete.png',]),
+                  ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons',          ['CRIMSONSolver/Materials/ui/icons/open.png',]),
+                  ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons',          ['CRIMSONSolver/Materials/ui/icons/save.png',]),
+                ]
 
-# This folder contains the dev/ and usr/ folders.
-flowSolverMainFolder = os.path.join(flowSolverRepoFolder, 'flowsolver')
-
-print('Expecting flowsolver main folder to be at ' + flowSolverMainFolder)
-
-# Working dir at runtime will be your system's equivalent to I:\crmsn\sb\CMakeExternals\Source\PythonModules
-flowsolver_files = gatherDirectoryContents(flowSolverMainFolder)
-basic_control_scripts_files = gatherDirectoryContents(os.path.join(flowSolverMainFolder, 'basicControlScripts'))
-flowsolver_config_files = gatherDirectoryContents(os.path.join(flowSolverMainFolder, 'flowsolverConfig'))
-python_libs = gatherDirectoryContents(os.path.join(flowSolverMainFolder, 'pythonLibs'))
-
-python_libs_data = recursiveGatherAllSubfolderContents(os.path.join(flowSolverMainFolder, 'pythonLibs'))
-
-data_files_in = [('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver', flowsolver_files),
-                ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver/flowsolverConfig', flowsolver_config_files),
-                ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver/basicControlScripts', basic_control_scripts_files),
-                ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies/flowsolver/pythonLibs', python_libs),
-                ('${python_lib_folder}site-packages/CRIMSONSolver/SolverStudies', ['CRIMSONSolver/SolverStudies/${presolver_executable_filename}',]),
-                ('${python_lib_folder}site-packages/CRIMSONSolver/BoundaryConditions/ui', ['CRIMSONSolver/BoundaryConditions/ui/PrescribedVelocitiesBoundaryConditionEditorWidget.ui',]),
-                ('${python_lib_folder}site-packages/CRIMSONSolver/BoundaryConditions/ui', ['CRIMSONSolver/BoundaryConditions/ui/NetlistBCEditorWidget.ui',]),
-                ('${python_lib_folder}site-packages/CRIMSONSolver/BoundaryConditions/ui/icons', ['CRIMSONSolver/BoundaryConditions/ui/icons/open.png',]),
-                ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui', ['CRIMSONSolver/Materials/ui/MaterialEditorWidget.ui',]),
-                ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui', ['CRIMSONSolver/Materials/ui/SingleMaterialEditorWidget.ui',]),
-                ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/after.png',]),
-                ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/before.png',]),
-                ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/circle.png',]),
-                ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/delete.png',]),
-                ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/open.png',]),
-                ('${python_lib_folder}site-packages/CRIMSONSolver/Materials/ui/icons', ['CRIMSONSolver/Materials/ui/icons/save.png',]),
-                ] + python_libs_data
+if(cmake_enable_flowsolver):
+  flowsolver_paths = getFlowsolverPaths()
+  data_files_in + flowsolver_paths
 
 setup(name='CRIMSON',
       version='1.0',
