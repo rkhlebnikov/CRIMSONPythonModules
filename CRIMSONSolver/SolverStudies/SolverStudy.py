@@ -4,11 +4,11 @@ import subprocess
 import tempfile
 from collections import OrderedDict
 import numpy
-import math
 import operator
 import ntpath
 import stat
 import platform
+import re
 
 from PythonQt import QtGui
 from PythonQt.CRIMSON import FaceType
@@ -150,7 +150,22 @@ class SolverStudy(object):
 
         return solutions
 
+
+    def _checkSystemForFlowsolver(self):
+        invalid_hostname = True if re.search(r'[^a-zA-Z0-9\-\.]', platform.node()) else False
+
+        if invalid_hostname:
+                QtGui.QMessageBox.warning(None, "Hostname may be invalid",
+                               "MPI may not work if your computer name contains non-standard characters.\n"
+                               "It may only contain a-z, A-Z, 0-9, ., and -. It was {}\n"
+                               "If flowsolver does not run, please change your computer name.".format(
+                                   platform.node())
+                                          )
+
+
     def runFlowsolver(self):
+        self._checkSystemForFlowsolver()
+
         simulationDirectory = QtGui.QFileDialog.getExistingDirectory(None, 'Set simulation directory')
 
         if not simulationDirectory:
