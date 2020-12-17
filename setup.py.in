@@ -79,7 +79,7 @@ data_files_in = [
 
 if(cmake_enable_flowsolver):
   flowsolver_paths = getFlowsolverPaths()
-  data_files_in + flowsolver_paths
+  data_files_in.append(flowsolver_paths)
 
 setup(name='CRIMSON',
       version='1.0',
