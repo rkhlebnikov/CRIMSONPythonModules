@@ -1,5 +1,10 @@
 import cPickle
 
+"""
+    NOTE: The methods in this file are called by
+    crimson\Modules\PythonSolverSetupService\src\SolverSetupPythonObjectIO.h
+"""
+
 def saveToFile(obj, filename):
     with open(filename, 'wb') as f:
         cPickle.dump(obj, f)

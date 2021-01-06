@@ -7,7 +7,10 @@ __author__ = 'rk13'
 
 
 class SolverInpData():
-    def __init__(self, solverParametersData, faceIndicesAndFileNames):
+    """
+        if numberOfScalars is 0, no scalar related solver.inp fields will be emitted
+    """
+    def __init__(self, solverParametersData, faceIndicesAndFileNames, numberOfScalars):
         self.data = OrderedDict()
 
         getFaceIds = lambda cond: [str(faceIdAndName[0]) for faceIdentifier, faceIdAndName in
@@ -20,6 +23,26 @@ class SolverInpData():
         props = solverParametersData.getProperties()
 
         #############################################################################
+        #NOTE: this class overrides __getitem__ (see below)
+        # Each OrderedDict section like this is a section like
+        """
+        # <Control Group>
+        # {
+            <Some Property> : <Some Value>
+            ...
+        # }
+
+        """
+
+        # For example:
+        """
+        # SOLUTION CONTROL
+        # {
+            Equation of State : Incompressible
+            Number of Timesteps : 200
+            Time Step Size : 0.01
+        # }
+        """
         solutionControlGroup = self['SOLUTION CONTROL']
         solutionControlGroup['Equation of State'] = 'Incompressible'
         solutionControlGroup['Number of Timesteps'] = props['Number of time steps']
@@ -44,6 +67,8 @@ class SolverInpData():
         #############################################################################
         cardiovascularModelingGroup = self['CARDIOVASCULAR MODELING PARAMETERS']
         cardiovascularModelingGroup['Global Node Numbering'] = True
+
+        # NOTE: Fluid influx coefficient
         cardiovascularModelingGroup['Influx Coefficient'] = props['Influx coefficient']
 
         cardiovascularModelingGroup['Residual Control'] = props['Residual control']
@@ -56,6 +81,15 @@ class SolverInpData():
 
         cardiovascularModelingGroup['Number of Surfaces which Output Pressure and Flow'] = len(outputSurfaceIds)
         cardiovascularModelingGroup['List of Output Surfaces'] = ' '.join(outputSurfaceIds)
+
+        if(numberOfScalars > 0):
+            cardiovascularModelingGroup['Scalar Influx Coefficient'] = props['Scalar Influx Coefficient']
+            cardiovascularModelingGroup['Scalar Discontinuity Capturing'] = props['Scalar Discontinuity Capturing']
+            
+            cardiovascularModelingGroup['Scalar Start Time'] = props['Start scalar simulation at timestep']
+            cardiovascularModelingGroup['End Solve Flow'] = props["End Flow Simulation Early Enable"]
+            cardiovascularModelingGroup['End Flow Time'] = props['End Flow Simulation at Timestep']
+
 
         try:
             cardiovascularModelingGroup['Simulate in Purely Zero Dimensions'] = props[
@@ -70,11 +104,15 @@ class SolverInpData():
             cardiovascularModelingGroup['Simulate in Purely Zero Dimensions'] = False
 
         #############################################################################
+        # NOTE: This is NOT for scalar iterations. This is for fluid iterations.
         linearSolverGroup = self['LINEAR SOLVER']
         nSteps = props['Step construction']
         linearSolverGroup['Step Construction'] = '{0} # this is the standard {1} iteration'.format('0 1 ' * nSteps,
                                                                                                    nSteps)
         linearSolverGroup['Solver Type'] = SolverType.enumNames[props['Solver type']]
+
+        if(numberOfScalars > 0):
+            linearSolverGroup['Solve Scalars'] = numberOfScalars
 
         #############################################################################
         discretizationControlGroup = self['DISCRETIZATION CONTROL']

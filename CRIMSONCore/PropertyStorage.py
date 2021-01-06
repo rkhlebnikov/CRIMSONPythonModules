@@ -14,6 +14,8 @@ class PropertyAccessor(object):
     def findItemIndex(propertyList, itemName):
         for i, property in enumerate(propertyList):
             propertyName, propertyValueKey = PropertyAccessor.getNameAndValueKey(property)
+            # Will fail the turkey test; locale dependent. 
+            # https://docs.python.org/2/library/stdtypes.html#str.lower
             if propertyName.lower() == itemName.lower():
                 return (propertyList, i, propertyValueKey)
             if isinstance(property[propertyValueKey], list):
@@ -44,9 +46,12 @@ class PropertyAccessor(object):
         if isinstance(propertyValue, list):
             raise TypeError("It is forbidden to modify the property lists")
 
+        # This type check fails "duck typing" checks, and will, for example, fail if you attempt to treat a unicode string as a byte string, or vice versa.
+        # It also fails to account for inheritance. This is not an ideal way to check for type equivalence.
         if type(propertyValue) != type(value):
-            raise TypeError("It is forbidden to change the type of properties. Expected " + type(
-                propertyValue).__name__ + ", received " + type(value).__name__)
+            raise TypeError("It is forbidden to change the type of properties. Propery name: '" + itemName 
+                            + "' Set with '" + str(propertyValue) + "', data of type: '" + type(propertyValue).__name__ 
+                            + "', received value '" + str(value) + "' of type: '" + type(value).__name__ + "'")
 
         propertyList[index][valueKey] = value
 

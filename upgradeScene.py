@@ -154,7 +154,7 @@ def createMeshFaceInfo(tempDir, filename, allFiles, indexXML):
         if meshNode:
             meshNode.append(ET.Element('additionalFile', {'file': baseName + '.faceinfo'}))
 
-
+# this appears to be for opening files
 def upgradeScene(filename):
     tempdir = tempfile.mkdtemp()
     try:
@@ -182,10 +182,13 @@ def upgradeScene(filename):
 
         newSourceNodeUIDs = {}
         for i, sourceNodeUID in enumerate(derivedNodes.keys()):
+            # where newUID is in the form OBJECT_0, OBJECT_1, OBJECT_2, ...
             newUID = "OBJECT_{0}".format(i)
             newElement = ET.Element('node', {"UID": newUID})
             newElement.append(ET.Element('properties', {'file': newUID}))
             newElement.append(ET.Element('source', {'UID': sourceNodeUID}))
+            # I think this is an intermediate file that doesn't make it into the final zip file,
+            # it looks like it's ignored because it has no extension
             with open(os.path.join(tempdir, newUID), 'wt') as f:
                 f.write('''<?xml version="1.0" ?>
 <Version Writer="T:\MITK\Modules\SceneSerializationBase\src\mitkPropertyListSerializer.cpp" Revision="$Revision: 17055 $" FileVersion="1" />
@@ -264,6 +267,12 @@ def upgradeScene(filename):
 try:
     from PythonQt import QtGui
 
+    # Is this unused? Note: The non-plural function *is* used.
+    # It doesn't seem very useful, the script sys.exits if it's given no command line arguments,
+    # seems like maybe this could be useful if it handled the zero command line options route.
+    #
+    # I guess in theory this function might be useful if this script was imported as a module, 
+    # it doesn't appear to be, though.
     def upgradeScenes():
         filenames = PythonQt.QtGui.QFileDialog.getOpenFileNames(None, "Select scenes to upgrade", "", "*.mitk")
         for filename in filenames:

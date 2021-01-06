@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os
 import shutil
 import subprocess
@@ -21,8 +23,207 @@ from CRIMSONSolver.SolverStudies.FileList import FileList
 from CRIMSONSolver.SolverStudies.SolverInpData import SolverInpData
 from CRIMSONSolver.SolverStudies.Timer import Timer
 from CRIMSONSolver.BoundaryConditions import NoSlip, InitialPressure, RCR, ZeroPressure, PrescribedVelocities, \
-    DeformableWall, Netlist, PCMRI, RAD
+    DeformableWall, Netlist, PCMRI
 from CRIMSONSolver.Materials import MaterialData
+from CRIMSONSolver.ScalarProblem import Scalar, ScalarProblem, ScalarNeumann, ScalarDirichlet, InitialConcentration, NoFlux
+from CRIMSONSolver.ScalarProblem.GenerateScalarProblemSpecification import GenerateSpecification
+
+def _getThisScriptFolder():
+    scriptFolder = os.path.dirname(os.path.realpath(__file__))
+    return scriptFolder
+
+def _getParentDirectory(directory):
+    # Pretty much appends /.. at the end of the folder.
+    upOneDir = os.path.join(directory, os.pardir)
+    # this just interprets the .. and cleans up the path
+    normalized = os.path.normpath(upOneDir)
+    return normalized
+
+def _getCRIMSONSolverDirectory():
+    thisScriptFolder = _getThisScriptFolder()
+    return _getParentDirectory(thisScriptFolder)
+
+def _sort_ExtractIndexFromFaceKVP(kvp):
+    #print('DEBUG: kvp is ', kvp)
+    (faceID, indexFaceTypeArray) = kvp
+    (index, faceType) = indexFaceTypeArray
+    return index
+
+def _getValidFaceIdentifiers(solidModelData, boundaryCondition):
+    validFaceIdentifiers = []
+
+    if(len(boundaryCondition.faceIdentifiers) < 1):
+        print('Warning: No face identifiers for boundary condition')
+        return []
+
+    for faceID in boundaryCondition.faceIdentifiers:
+        isValid = (solidModelData.faceIdentifierIndex(faceID) != -1)
+        if(not isValid):
+            print("Warning: Unable to match faceID '", str(faceID), "' in boundary condition with face in solid model data.")
+            continue
+        
+        validFaceIdentifiers.append(faceID)
+
+    return validFaceIdentifiers
+
+
+"""
+    Throws:
+        RuntimeError if there is not at least one initial condition (the presolver won't even accept it)
+
+    returns:
+        Complete string containing the entirety of the information needed to be written for the scalar boundary conditions section.
+"""
+def _formatScalarBoundaryConditionsString(solidModelData, faceIndicesAndFileNames, scalarBCsForSingleScalar, scalarSymbol, scalarIndex):
+
+    initialConcentration = None
+
+    # Scalar numbers are 1 based
+    scalarNumber = scalarIndex + 1
+
+    # Don't want to use this by accident.
+    scalarIndex = None
+
+    print('Found ', len(scalarBCsForSingleScalar), ' boundary and initial conditions for scalar #', scalarNumber, ' ("',scalarSymbol,'")', sep='')
+
+    allBoundaryConditionsString = ""
+    allBoundaryConditionsString += "#Boundary Conditions for scalar number {} ('{}')\n".format(scalarNumber, scalarSymbol)
+
+    initialConditionBC = None
+
+    for scalarBC in scalarBCsForSingleScalar:
+        bcProperties = scalarBC.getProperties()
+        boundaryConditionString = ''
+
+        if(isinstance(scalarBC, ScalarNeumann.ScalarNeumann)):   
+            #print('DEBUG: detected Neumann bc')         
+            bcValidFaceIDs = _getValidFaceIdentifiers(solidModelData, scalarBC)
+            if(len(bcValidFaceIDs) < 1):
+                print('WARNING: no valid face Ids for BC of type', str(type(scalarBC)))
+                continue
+
+            faceLines = ''
+            for faceID in bcValidFaceIDs:
+                (priorityIndex, typeAndVesselName) = faceIndicesAndFileNames[faceID]
+                #Per sample info
+                faceFileName = '{}.ebc'.format(typeAndVesselName)
+                fluxValue = bcProperties['value']
+
+                # WARNING: Hokey indentation is deliberate, I don't want extra spacing in the.supre
+                faceLines += \
+'''# Scalar Neumann
+set_scalar_flux {} {} {}
+'''.format(faceFileName, scalarNumber, fluxValue)
+            
+            boundaryConditionString += faceLines
+
+        elif(isinstance(scalarBC, ScalarDirichlet.ScalarDirichlet)):
+            #print('DEBUG: detected Dirichlet bc')    
+            bcValidFaceIDs = _getValidFaceIdentifiers(solidModelData, scalarBC)
+            if(len(bcValidFaceIDs) < 1):
+                print('WARNING: no valid face Ids for BC of type', str(type(scalarBC)))
+                continue
+
+            faceLines = ''
+            for faceID in bcValidFaceIDs:
+                (priorityIndex, typeAndVesselName) = faceIndicesAndFileNames[faceID]
+                #Per sample info
+                faceFileName = '{}.nbc'.format(typeAndVesselName)
+                value = bcProperties['value']
+                faceLines += 'set_scalar_dirichlet_value {} {} {}\n'.format(faceFileName, scalarNumber, value)
+
+            boundaryConditionString += faceLines
+
+        elif(isinstance(scalarBC, InitialConcentration.InitialConcentration)):
+            #print('DEBUG: detected Initial Concentration bc')
+            if(initialConditionBC is not None):
+                print('Warning: More than one initial concentration boundary condition provided. Only the first one will be used.')
+                continue
+            
+            initialValue = bcProperties['concentration']
+
+            boundaryConditionString = 'set_scalar_initial_value {} {}\n'.format(scalarNumber, initialValue)
+
+            initialConditionBC = scalarBC
+
+        # Same as Scalar Neumann but all 0 values, intended for walls.
+        elif(isinstance(scalarBC, NoFlux.NoFlux)):
+            #print('DEBUG: detected no flux bc')         
+            bcValidFaceIDs = _getValidFaceIdentifiers(solidModelData, scalarBC)
+            if(len(bcValidFaceIDs) < 1):
+                print('WARNING: no valid face Ids for BC of type', str(type(scalarBC)))
+                continue
+
+            faceLines = ''
+            for faceID in bcValidFaceIDs:
+                (priorityIndex, typeAndVesselName) = faceIndicesAndFileNames[faceID]
+
+                faceFileName = '{}.ebc'.format(typeAndVesselName)
+                faceLines += \
+'''# No Flux
+set_scalar_flux {} {} 0.0
+'''.format(faceFileName, scalarNumber)
+            
+            boundaryConditionString += faceLines
+
+        else:
+            print("Unexpected scalar boundary condition of type '", str(type(scalarBC)))
+            continue
+
+        allBoundaryConditionsString += boundaryConditionString
+
+    if(initialConditionBC is None):
+        raise RuntimeError("No initial condition provided for scalar #{} ('{}'). At least one initial condition must be provided for each scalar.".format(scalarNumber, scalarSymbol))
+
+    return allBoundaryConditionsString
+
+def _stringIsNoneOrWhitespace(string):
+    if(string is None):
+        return True
+    
+    if(string == ''):
+        return True
+
+    if(string.isspace()):
+        return True
+    
+    return False
+
+def _writeScalarProblemSpecification(solverParameters, scalarProblem, scalars, outputDir):
+    if(scalarProblem is None):
+        return
+    
+    scalarIterations = solverParameters.getIterations()
+    fluidIterationCount = solverParameters.getFluidIterationCount()
+    reactionCoefficients = scalarProblem.getReactionCoefficients()
+
+    scalarSymbols = []
+    diffusionCoefficients = dict()
+    reactionStrings = dict()
+
+    for scalar in scalars:
+        scalarSymbol = scalar.getScalarSymbol()
+
+        if(scalarSymbol in scalarSymbols):
+            print("Unexpected error: Duplicate scalar symbol '", scalarSymbol, "'", sep='')
+            continue
+
+        scalarSymbols.append(scalarSymbol)
+        diffusionCoefficients[scalarSymbol] = scalar.getProperties()['Diffusion coefficient']
+        reactionString = scalar.getReaction_SingleLine()
+
+        if(_stringIsNoneOrWhitespace(reactionString)):
+            print("Warning: Reaction string for scalar with symbol '", scalarSymbol, "' is not set, or entirely whitespace.", sep='')
+
+        reactionStrings[scalarSymbol] = reactionString
+
+    specificationFileString = GenerateSpecification(fluidIterationCount, scalarIterations, diffusionCoefficients, scalarSymbols, reactionCoefficients, reactionStrings)
+
+    filePath = os.path.join(outputDir, 'generated_scalarProblemSpecification.py')
+    with open(filePath, 'wb') as specificationFile:
+        specificationFile.write(specificationFileString)
+
+    print('Wrote scalarProblemSpecification to "', filePath, "'", sep='')
 
 
 # A helper class providing lazily-evaluated quantities for material computation
@@ -89,7 +290,17 @@ class SolverStudy(object):
         self.meshNodeUID = ""
         self.solverParametersNodeUID = ""
         self.boundaryConditionSetNodeUIDs = []
+        self.scalarProblemNodeUID = ""  
+
+        # This is only stored here because the C++ interface in SolverSetupService is incapable of getting child UIDs of a UID
+        self.scalarNodeUIDs = []
         self.materialNodeUIDs = []
+
+    # About the UID methods:
+    #   -   The get/set UID(s) methods are meant to represent the current set of *selected nodes* in the study.
+    #   -   For example, you may have more than one mesh in your data tree, but you can only select one for your study.
+    #   -   For data types like meshes where there's only one selection allowed, the Study tab in SolverSetupView has a Combo Box 
+    #       for users to specify which mesh they want to use in the simulation.
 
     def getMeshNodeUID(self):
         return self.meshNodeUID
@@ -108,6 +319,18 @@ class SolverStudy(object):
 
     def setBoundaryConditionSetNodeUIDs(self, uids):
         self.boundaryConditionSetNodeUIDs = uids
+
+    def getScalarProblemNodeUID(self):
+        return self.scalarProblemNodeUID
+
+    def setScalarProblemNodeUID(self, uid):
+        self.scalarProblemNodeUID = uid
+
+    def getScalarNodeUIDs(self):
+        return self.scalarNodeUIDs
+
+    def setScalarNodeUIDs(self, uids):
+        self.scalarNodeUIDs = uids
 
     def getMaterialNodeUIDs(self):
         if 'materialNodeUIDs' not in self.__dict__:
@@ -196,15 +419,52 @@ class SolverStudy(object):
                              creationflags=subprocess.CREATE_NEW_CONSOLE)
 
 
-    # Called from Modules\PythonSolverSetupService\src\PythonSolverStudyData.cpp
-    #                      ~line 297: _pyStudyObject.call("writeSolverSetup",...
+    # Called from https://github.com/CRIMSONCardiovascularModelling/crimson_gui_private/blob/16ebe6f65706a223098f940cff0b6f117f839022/Modules/PythonSolverSetupService/src/PythonSolverStudyData.cpp#L294
+    # (bool PythonSolverStudyData::writeSolverSetup(...))
+    #
+    # If the scalar problem simulation checkbox is NOT enabled, here's what these parameters will have:
+    # - scalarProblem: None
+    # - scalars: [] (empty list)
+    # - scalarBCs: {} (empty dict)
     def writeSolverSetup(self, vesselForestData, solidModelData, meshData, solverParameters, boundaryConditions,
-                         materials, vesselPathNames, solutionStorage):
+                         scalarProblem, scalars, scalarBCs, materials, vesselPathNames, solutionStorage):
+        #print('DEBUG: scalars is:', scalars)
+        #print('DEBUG: scalarProblem is:', scalarProblem)
+        #print('DEBUG: scalar BCs are:', scalarBCs)
+        enableScalar = (scalarProblem is not None)
+
+        if(enableScalar):
+            print('Scalar simulation enabled.') 
+        else:
+            print('Scalar simulation disabled.')
+        
+        for scalar in scalars:
+            print('Scalar symbol: ', scalar.getScalarSymbol())
 
         outputDir = QtGui.QFileDialog.getExistingDirectory(None, 'Select output folder')
 
         if not outputDir:
             return
+
+        if(enableScalar):
+            _writeScalarProblemSpecification(solverParameters, scalarProblem, scalars, outputDir)
+
+            # CWD is not very helpful with this:
+            # DEBUG: Current working directory is C:\cscald2\CRIMSON-build\bin
+            # print('DEBUG: Current working directory is', os.getcwd())
+            crimsonSolverPath = _getCRIMSONSolverDirectory()
+            genericScalarProblemSpecificationPath = os.path.join(crimsonSolverPath, 'ScalarProblem/ForProcsCase/scalarProblemSpecification.py')
+            try:
+
+                
+                # this script won't be changed for most scalar simulations, we figure it's best to include it with the solver input data
+                # so that in case a highly technical user wants to modify it, they can.
+                #
+                # scalarProblemSpecification.py is in PythonModules/CrimsonSolver/ScalarProblem/ForProcsCase/
+                shutil.copy2(genericScalarProblemSpecificationPath, outputDir)
+            except Exception as ex:
+                raise RuntimeError('An error occurred while copying scalarProblemSpecification from "{}" to "{}": {}'.format(genericScalarProblemSpecificationPath, outputDir, ex.message))
+
 
         if solutionStorage is not None:
             if QtGui.QMessageBox.question(None, 'Write solution to the solver output?',
@@ -216,18 +476,22 @@ class SolverStudy(object):
         presolverDir = os.path.join(outputDir, 'presolver')
         if not os.path.exists(presolverDir):
             os.makedirs(presolverDir)
-
+        
+        # Initialize a FileList object instance with the selected output directory,
+        # any calls to this object will read and write files relative to this folder.
+        print("Using '", outputDir, "' as output directory.", sep='')
         fileList = FileList(outputDir)
 
         try:
             faceIndicesAndFileNames = self._computeFaceIndicesAndFileNames(solidModelData, vesselPathNames)
-            solverInpData = SolverInpData(solverParameters, faceIndicesAndFileNames)
+            solverInpData = SolverInpData(solverParameters, faceIndicesAndFileNames, len(scalars))
 
             supreFile = fileList[os.path.join('presolver', 'the.supre')]
 
             self._writeSupreHeader(meshData, supreFile)
             self._writeSupreSurfaceIDs(faceIndicesAndFileNames, supreFile)
 
+            # Note: The face indices and file names are associated with boundary conditions
             with Timer('Written nbc and ebc files'):
                 faceIndicesInAllExteriorFaces = self._writeNbcEbc(solidModelData, meshData, faceIndicesAndFileNames,
                                                                   fileList)
@@ -238,11 +502,11 @@ class SolverStudy(object):
             with Timer('Written adjacency'):
                 self._writeAdjacency(meshData, fileList)
             with Timer('Written boundary conditions'):
-                self._writeBoundaryConditions(vesselForestData, solidModelData, meshData, boundaryConditions,
+                self._writeBoundaryConditions(vesselForestData, solidModelData, meshData, boundaryConditions, scalars, scalarBCs,
                                               materials, faceIndicesAndFileNames, solverInpData, fileList,
                                               faceIndicesInAllExteriorFaces)
 
-            self._writeSolverSetup(solverInpData, fileList)
+            self._writeSolverSetup(solverInpData, fileList, enableScalar)
 
             supreFile.write('write_geombc  geombc.dat.1\n')
             supreFile.write('write_restart  restart.0.1\n')
@@ -435,8 +699,11 @@ class SolverStudy(object):
         return self._writeEbc(meshData, allFaceIdentifiers,
                               fileList[os.path.join('presolver', 'all_exterior_faces.ebc')])
 
-    def _writeSolverSetup(self, solverInpData, fileList):
+    def _writeSolverSetup(self, solverInpData, fileList, enableScalar):
         solverInpFile = fileList['solver.inp', 'wb']
+        
+        if(enableScalar):
+            solverInpFile.write('Use Python for Scalar Problem Reaction Terms : True\n')
 
         # Where solver.inp is data separated by categories, where catagories are in the form:
         #   #<CATEGORY NAME>
@@ -469,8 +736,9 @@ class SolverStudy(object):
 
         return not hadError
 
-    def _writeBoundaryConditions(self, vesselForestData, solidModelData, meshData, boundaryConditions, materials,
-                                 faceIndicesAndFileNames, solverInpData, fileList, faceIndicesInAllExteriorFaces):
+    def _writeBoundaryConditions(self, vesselForestData, solidModelData, meshData, boundaryConditions, scalars, scalarBCsDict,
+                                materials, faceIndicesAndFileNames, solverInpData, fileList, faceIndicesInAllExteriorFaces):
+        
         if not self._validateBoundaryConditions(boundaryConditions):
             raise RuntimeError('Invalid boundary conditions. Aborting.')
 
@@ -499,9 +767,11 @@ class SolverStudy(object):
 
         bctInfo = BCTInfo()
 
+        # [AJM] Shouldn't we put a warning or something for invalid face identifiers?
         validFaceIdentifiers = lambda bc: (x for x in bc.faceIdentifiers if
                                            solidModelData.faceIdentifierIndex(x) != -1)
-
+        
+        # [AJM] Why not just use "isinstance"? This static type name check breaks duck typing and polymorphism.
         is_boundary_condition_type = lambda bc, bcclass: bc.__class__.__name__ == bcclass.__name__
 
         initialPressure = None
@@ -811,6 +1081,31 @@ class SolverStudy(object):
                     supreFile.write(readSWBCommand + '\n')
                 supreFile.write('deformable_solve\n\n')
 
+        supreFile.write('number_of_scalar_rad_species {0}\n'.format(len(scalars)))
+        supreFile.write('\n')
+
+        #print('DEBUG: Scalar bcs dictionary:')
+        #print(scalarBCsDict)
+
+        #%% Write scalar boundary conditions
+        for scalarIndex in range(len(scalars)):
+            scalar = scalars[scalarIndex]
+            scalarSymbol = scalar.getScalarSymbol()
+            bcsForScalar = scalarBCsDict[scalarSymbol]
+            scalarBoundaryConditionsString = _formatScalarBoundaryConditionsString( 
+                                                                                    solidModelData, 
+                                                                                    faceIndicesAndFileNames,
+                                                                                    bcsForScalar,
+                                                                                    scalarSymbol,
+                                                                                    scalarIndex
+                                                                                    )
+
+            #print('DEBUG: scalarBoundaryConditionsString is')
+            #print(scalarBoundaryConditionsString)
+            # NOTE: Do not append '\n'
+            supreFile.write(scalarBoundaryConditionsString)
+
+
         # Finalize
         if len(rcrInfo.faceIds) > 0:
             rcrGroup = solverInpData['CARDIOVASCULAR MODELING PARAMETERS: RCR']
@@ -1024,6 +1319,16 @@ class SolverStudy(object):
         supreFile.write('adjacency the.xadj\n')
         supreFile.write('\n')
 
+    """
+        Returns:
+            Ordered dictionary of faceID to [<priorityIndex>, <type>], ordered by priorityIndex
+            e.g.,
+            {
+                <FaceIdentifer.FaceIdentifier>: [2, u'inflow_left'],
+                <FaceIdentifer.FaceIdentifier>: [3, u'inflow_right'],
+                ...
+            }
+    """
     def _computeFaceIndicesAndFileNames(self, solidModelData, vesselPathNames):
         faceTypePrefixes = {FaceType.ftCapInflow: 'inflow_',
                             FaceType.ftCapOutflow: 'outflow_',
@@ -1033,9 +1338,16 @@ class SolverStudy(object):
         for i in xrange(solidModelData.getNumberOfFaceIdentifiers()):
             faceIdentifier = solidModelData.getFaceIdentifier(i)
 
-            faceIndicesAndFileNames[faceIdentifier] = [-1, faceTypePrefixes[faceIdentifier.faceType] + '_'.join(
-                (vesselPathNames.get(vesselPathUID, vesselPathUID).replace(' ', '_') for vesselPathUID in
-                 faceIdentifier.parentSolidIndices))]
+            faceIndicesAndFileNames[faceIdentifier] = [
+                -1, # Note: this -1 is replaced later
+                # Note: in the format <prefix>_<vesselName>
+                # Example: inflow_Vessel2
+                faceTypePrefixes[faceIdentifier.faceType] + '_'.join(
+                        (
+                            vesselPathNames.get(vesselPathUID, vesselPathUID).replace(' ', '_') for vesselPathUID in faceIdentifier.parentSolidIndices
+                        )
+                    )
+                ]
 
         faceTypePriority = {FaceType.ftCapInflow: 1, FaceType.ftCapOutflow: 2, FaceType.ftWall: 3}
 
@@ -1044,11 +1356,21 @@ class SolverStudy(object):
                 return -1 if faceTypePriority[l[0].faceType] < faceTypePriority[r[0].faceType] else 1
             return -1 if l[1] < r[1] else 1
 
-        for i, kv in enumerate(sorted(faceIndicesAndFileNames.iteritems(),
-                                      cmp=compareWithPriority)):
-            faceIndicesAndFileNames[kv[0]][0] = i + 2  # 1 is reserved for all_exterior_faces
+        for priorityIndex, kv in enumerate( sorted(faceIndicesAndFileNames.iteritems(), cmp=compareWithPriority) ):
+            #print('DEBUG: kv is', kv)
+            #print('DEBUG: faceIndicesAndFileNames is', faceIndicesAndFileNames)
+            #print('DEBUG: faceIndicesAndFileNames[ kv[0] ] is', faceIndicesAndFileNames[ kv[0] ])
+            #print('DEBUG: faceIndicesAndFileNames[ kv[0] ][0] is', faceIndicesAndFileNames[ kv[0] ][0])
+            #print('DEBUG: priorityIndex is ', priorityIndex)
+            faceID = kv[0]
+            faceTuple = faceIndicesAndFileNames[faceID]
+            faceTuple[0] = priorityIndex + 2  # 1 is reserved for all_exterior_faces
 
-        return OrderedDict(sorted(faceIndicesAndFileNames.items(), key=lambda t: t[1][0]))
+        #print('DEBUG: unsorted is', faceIndicesAndFileNames.items())
+        sortedDict = sorted(faceIndicesAndFileNames.items(), key=_sort_ExtractIndexFromFaceKVP)
+        #print('DEBUG: sortedDict is', sortedDict)
+        ordered = OrderedDict(sortedDict)
+        return ordered
 
     # Compute materials and return them in form of SolutionStorage
     def computeMaterials(self, materials, vesselForestData, solidModelData, meshData):
