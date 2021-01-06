@@ -53,7 +53,6 @@ def _getValidFaceIdentifiers(solidModelData, boundaryCondition):
     validFaceIdentifiers = []
 
     if(len(boundaryCondition.faceIdentifiers) < 1):
-        print('Warning: No face identifiers for boundary condition')
         return []
 
     for faceID in boundaryCondition.faceIdentifiers:
@@ -423,7 +422,9 @@ class SolverStudy(object):
     # (bool PythonSolverStudyData::writeSolverSetup(...))
     #
     # If the scalar problem simulation checkbox is NOT enabled, here's what these parameters will have:
-    # - scalarProblem: None
+    # - scalarProblem: ???
+    #       I would have thought that scalarProblem would be None, but it appears that Qt does not send nullptr accross as None.
+    #       Don't use this value if enableScalar is False.
     # - scalars: [] (empty list)
     # - scalarBCs: {} (empty dict)
     def writeSolverSetup(self, vesselForestData, solidModelData, meshData, solverParameters, boundaryConditions,
@@ -431,7 +432,12 @@ class SolverStudy(object):
         #print('DEBUG: scalars is:', scalars)
         #print('DEBUG: scalarProblem is:', scalarProblem)
         #print('DEBUG: scalar BCs are:', scalarBCs)
-        enableScalar = (scalarProblem is not None)
+
+        enableScalar = False
+
+        if(scalars is not None):
+            if(len(scalars) > 0):
+                enableScalar = True
 
         if(enableScalar):
             print('Scalar simulation enabled.') 
@@ -524,6 +530,7 @@ class SolverStudy(object):
 
                 Utils.logInformation('Done')
 
+            print('Finished writing solver setup')
         except Exception as e:
             Utils.logError(str(e))
             fileList.close()
@@ -1081,29 +1088,30 @@ class SolverStudy(object):
                     supreFile.write(readSWBCommand + '\n')
                 supreFile.write('deformable_solve\n\n')
 
-        supreFile.write('number_of_scalar_rad_species {0}\n'.format(len(scalars)))
-        supreFile.write('\n')
+        if(len(scalars) > 0):
+            supreFile.write('number_of_scalar_rad_species {0}\n'.format(len(scalars)))
+            supreFile.write('\n')
 
-        #print('DEBUG: Scalar bcs dictionary:')
-        #print(scalarBCsDict)
+            #print('DEBUG: Scalar bcs dictionary:')
+            #print(scalarBCsDict)
 
-        #%% Write scalar boundary conditions
-        for scalarIndex in range(len(scalars)):
-            scalar = scalars[scalarIndex]
-            scalarSymbol = scalar.getScalarSymbol()
-            bcsForScalar = scalarBCsDict[scalarSymbol]
-            scalarBoundaryConditionsString = _formatScalarBoundaryConditionsString( 
-                                                                                    solidModelData, 
-                                                                                    faceIndicesAndFileNames,
-                                                                                    bcsForScalar,
-                                                                                    scalarSymbol,
-                                                                                    scalarIndex
-                                                                                    )
+            #%% Write scalar boundary conditions
+            for scalarIndex in range(len(scalars)):
+                scalar = scalars[scalarIndex]
+                scalarSymbol = scalar.getScalarSymbol()
+                bcsForScalar = scalarBCsDict[scalarSymbol]
+                scalarBoundaryConditionsString = _formatScalarBoundaryConditionsString( 
+                                                                                        solidModelData, 
+                                                                                        faceIndicesAndFileNames,
+                                                                                        bcsForScalar,
+                                                                                        scalarSymbol,
+                                                                                        scalarIndex
+                                                                                        )
 
-            #print('DEBUG: scalarBoundaryConditionsString is')
-            #print(scalarBoundaryConditionsString)
-            # NOTE: Do not append '\n'
-            supreFile.write(scalarBoundaryConditionsString)
+                #print('DEBUG: scalarBoundaryConditionsString is')
+                #print(scalarBoundaryConditionsString)
+                # NOTE: Do not append '\n'
+                supreFile.write(scalarBoundaryConditionsString)
 
 
         # Finalize
