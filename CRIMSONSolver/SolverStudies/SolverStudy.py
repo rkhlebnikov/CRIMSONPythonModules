@@ -429,6 +429,12 @@ class SolverStudy(object):
     # - scalarBCs: {} (empty dict)
     def writeSolverSetup(self, vesselForestData, solidModelData, meshData, solverParameters, boundaryConditions,
                          scalarProblem, scalars, scalarBCs, materials, vesselPathNames, solutionStorage):
+
+        outputDir = QtGui.QFileDialog.getExistingDirectory(None, 'Select output folder')
+
+        if not outputDir:
+            return
+
         #print('DEBUG: scalars is:', scalars)
         #print('DEBUG: scalarProblem is:', scalarProblem)
         #print('DEBUG: scalar BCs are:', scalarBCs)
@@ -444,15 +450,11 @@ class SolverStudy(object):
         else:
             print('Scalar simulation disabled.')
         
-        for scalar in scalars:
-            print('Scalar symbol: ', scalar.getScalarSymbol())
-
-        outputDir = QtGui.QFileDialog.getExistingDirectory(None, 'Select output folder')
-
-        if not outputDir:
-            return
-
         if(enableScalar):
+            print('With scalars:')
+            for scalar in scalars:
+                print('Symbol: ', scalar.getScalarSymbol())
+            
             _writeScalarProblemSpecification(solverParameters, scalarProblem, scalars, outputDir)
 
             # CWD is not very helpful with this:
