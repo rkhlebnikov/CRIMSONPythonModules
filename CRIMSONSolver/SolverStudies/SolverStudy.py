@@ -216,6 +216,23 @@ def _writeScalarProblemSpecification(solverParameters, scalarProblem, scalars, o
 
         reactionStrings[scalarSymbol] = reactionString
 
+    # Validate scalar iterations (look for undefined symbols)
+    if(len(scalarIterations) < 1):
+        print('Warning: Scalar problem has no scalar iterations')
+
+    for iterationIndex in range(len(scalarIterations)):
+        scalarIteration = scalarIterations[iterationIndex]
+
+        if('Operation' not in scalarIteration):
+            print('Warning: In Solver Parameters, Scalar iteration #', (iterationIndex + 1), ' has no Operation field.', sep='')
+            continue
+        
+        iterationSymbol = scalarIteration['Operation']
+
+        if(iterationSymbol not in scalarSymbols):
+            print('Warning: In Solver Parameters, Scalar Iteration #', (iterationIndex + 1), ' references an unknown scalar with symbol "', iterationSymbol, '"', sep='')
+
+
     specificationFileString = GenerateSpecification(fluidIterationCount, scalarIterations, diffusionCoefficients, scalarSymbols, reactionCoefficients, reactionStrings)
 
     filePath = os.path.join(outputDir, 'generated_scalarProblemSpecification.py')
