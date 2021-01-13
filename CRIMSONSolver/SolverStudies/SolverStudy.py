@@ -458,7 +458,6 @@ class SolverStudy(VersionedObject):
     #
     # If the scalar problem simulation checkbox is NOT enabled, here's what these parameters will have:
     # - scalarProblem: ???
-    #       I would have thought that scalarProblem would be None, but it appears that Qt does not send nullptr accross as None.
     #       Don't use this value if enableScalar is False.
     # - scalars: [] (empty list)
     # - scalarBCs: {} (empty dict)
@@ -474,21 +473,36 @@ class SolverStudy(VersionedObject):
         #print('DEBUG: scalarProblem is:', scalarProblem)
         #print('DEBUG: scalar BCs are:', scalarBCs)
 
-        enableScalar = False
-
-        if(scalars is not None):
-            if(len(scalars) > 0):
-                enableScalar = True
+        enableScalar = self.getEnableScalarSimulation()
 
         if(enableScalar):
             print('Scalar simulation enabled.') 
         else:
             print('Scalar simulation disabled.')
+
+        scalarsPresent = False
+
+        if(scalars is not None):
+            if(len(scalars) > 0):
+                scalarsPresent = True
+
+        if(enableScalar and not scalarsPresent):
+            errorMessage = 'Scalar simulation enabled but no scalars are defined. Please add some scalars before running solver setup.'
+            Utils.logError(errorMessage)
+            raise RuntimeError(errorMessage)
         
         if(enableScalar):
             print('With scalars:')
             for scalar in scalars:
                 print('Symbol: ', scalar.getScalarSymbol())
+
+            solverIterations = solverParameters.getIterations()
+
+            if(len(solverIterations) < 1):
+                # This is technically a valid simulation, but it's pointless, no scalar iterations will be ran.
+                errorMessage = 'An error occurred while reading solver parameters: Scalar simulation enabled but no solver iterations are defined. Please add some solver iterations'
+                Utils.logError(errorMessage)
+                raise RuntimeError(errorMessage)
             
             _writeScalarProblemSpecification(solverParameters, scalarProblem, scalars, outputDir)
 
