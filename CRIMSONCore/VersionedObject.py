@@ -1,12 +1,41 @@
 from __future__ import print_function
 
+"""
+    This file serves as a means for how to implement backwards compatibility with data stored in Python objects.
+    All solver objects that are saved to file should implement VersionedObject.
+    
+    Any object that implements VersionedObject will be handled specially by the code in CRIMSONCore/IO.py, 
+    when an object that implements VersionedObject is loaded from file, it will run upgradeToLatest(),
+    which will automatically add (or, perhaps, remove or convert) any fields as needed as the needs of Crimson change.
+    
+    It is the responsibility of individual objects to keep track of what changes are needed when going from one version to another.
+    If an object does not implement upgradeObject, the default behavior will be to assume no upgrades are necessary.
+    Some objects will probably very rarely change (BoundaryConditionSet),  
+    whereas some other objects may change frequently (e.g., SolverStudy, SolverParameters3D both got updated for the Scalar UI).
+    
+    This versioning happens completely independently of the C++ side, however the C++ side will imply that the objects are all
+    running the latest version. 
+    
+    For example, the C++ side may need to call a Python method that accesses a field that has been recently added.
+    That method would likely crash if that field was not present. The C++ side is not prepared for this failure.
+    
+    Remember that a de-pickled Python object gets 
+    - The latest methods from this version of PythonModules
+    - Whatever fields the object was initialized with, some time in the distant past, with whatever version of PythonModules Crimson was using at the time.
+
+    Note that the last time there was a major Python update (around 2017) I was not working on this project, if there are more versions that would benefit
+    from backwards compatibility, unfortunately, I do not know of them. Maybe there are no projects from 2017 still in active use.
+
+    [AJM] Jan. 2021
+
+"""
+
+
 def printNothing(*arg):
     pass
 
 # To disable debug printouts, set debugPrint to printNothing
 debugPrint = print
-
-# [AJM] Jan. 2021
 
 """
     Static class that holds information about python module versions worth keeping track of
