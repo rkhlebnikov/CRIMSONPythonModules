@@ -1,4 +1,4 @@
-class ScalarProblem(object):
+class ScalarProblem(VersionedObject):
     def __init__(self):
         self.ReactionCoefficients = {}
 
