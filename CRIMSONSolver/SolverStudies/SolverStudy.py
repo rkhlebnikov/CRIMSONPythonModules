@@ -312,6 +312,13 @@ class SolverStudy(object):
         self.scalarNodeUIDs = []
         self.materialNodeUIDs = []
 
+        # You might be wondering why we need a bool for enable/disable scalar simulation, 
+        # at first glance, it'd seem that having the UID of the scalar problem set to something would be enough.
+        #
+        # The thing is, I want users to have the option of not doing a scalar simulation, even if a scalar problem is somewhere in the hierarchy.
+        # "A scalar problem exists, but we don't want to use it" is a valid setup.
+        self.enableScalarSimulation = False
+
     # About the UID methods:
     #   -   The get/set UID(s) methods are meant to represent the current set of *selected nodes* in the study.
     #   -   For example, you may have more than one mesh in your data tree, but you can only select one for your study.
@@ -347,6 +354,15 @@ class SolverStudy(object):
 
     def setScalarNodeUIDs(self, uids):
         self.scalarNodeUIDs = uids
+
+    def getEnableScalarSimulation(self):
+        #print('DEBUG: GET: Enable scalar simulation is: ', self.enableScalarSimulation)
+        return self.enableScalarSimulation
+
+    def setEnableScalarSimulation(self, value):
+        self.enableScalarSimulation = value
+        #print('DEBUG: SET: Enable scalar simulation is now: ', self.enableScalarSimulation)
+    
 
     def getMaterialNodeUIDs(self):
         if 'materialNodeUIDs' not in self.__dict__:
