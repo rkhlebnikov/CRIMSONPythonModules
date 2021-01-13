@@ -1477,8 +1477,11 @@ class SolverStudy(VersionedObject):
     def upgrade_Pre2021_To_v2021A(self):
         print('Applying v2021A upgrades to Solver Study...')
 
+        # Fields necessary for SolverStudy to identify the new scalar nodes
         self.scalarProblemNodeUID = ''
         self.scalarNodeUIDs = []
+
+        # Since older versions didn't have a scalar simulation option, it makes sense to have this be default off.
         self.enableScalarSimulation = False
 
     def upgradeObject(self, toVersion):

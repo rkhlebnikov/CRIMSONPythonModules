@@ -76,9 +76,13 @@ def GetCurrentVersion():
     Because of that, the fields are essentially a contract to be maintained, and this base implementation allows for that.
 """
 class VersionedObject(object):
+    """
+        This init function will only be called for *newly created* solver objects, *not* previously saved objects loaded from file.
+    """
     def __init__(self):
         # Pickle will load all the fields, so this should always be set to whatever the latest version of the interface is.
-        # This init function will only be called for *newly created* objects, not objects loaded from file.
+        # So just to be 100% clear, self.version will be depickled, this whole class is designed around the fact that Pickle 
+        # deserializes only class fields, not methods or functions.
         self.version = GetCurrentVersion()
 
     """
@@ -89,6 +93,9 @@ class VersionedObject(object):
         fyi_fromVersion = self.getVersion()
         pass
 
+    """
+        This method will apply all upgrade steps to this object from the version it is at now, to the version the system is running.
+    """
     def upgradeToLatest(self):
         fromVersion = self.getVersion()
 

@@ -197,8 +197,11 @@ class SolverParameters3D(PropertyStorage):
 
     def upgrade_Pre2021_To_v2021A(self):
         print('Applying v2021A upgrades to Solver Parameters...')
+
+        # Scalar problems need a more advanced iteration setup than "run N fluid iterations"
         self.Iterations = []
         
+        # It might not be a bad idea to save this as a field somewhere else, "default scalar simulation parameters"
         scalarSimulationParameters =  {
             "Scalar simulation parameters":
             [
