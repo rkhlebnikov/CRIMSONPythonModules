@@ -1,5 +1,9 @@
 from __future__ import print_function
 
+def printNothing(*arg):
+    pass
+
+# To disable debug printouts, set debugPrint to printNothing
 debugPrint = print
 
 # [AJM] Jan. 2021
