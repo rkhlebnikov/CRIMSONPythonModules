@@ -304,6 +304,7 @@ class MaterialFaceInfo(object):
 
 class SolverStudy(VersionedObject):
     def __init__(self):
+        VersionedObject.__init__(self)
         self.meshNodeUID = ""
         self.solverParametersNodeUID = ""
         self.boundaryConditionSetNodeUIDs = []

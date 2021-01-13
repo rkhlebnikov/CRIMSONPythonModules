@@ -251,6 +251,7 @@ class PropertyStorage(VersionedObject):
             }
     '''
     def __init__(self):
+        VersionedObject.__init__(self)
         self.properties = []
 
     def getProperties(self):

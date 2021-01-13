@@ -3,7 +3,7 @@ from CRIMSONCore.VersionedObject import VersionedObject, Versions
 class ScalarProblem(VersionedObject):
     def __init__(self):
         self.ReactionCoefficients = {}
-
+        VersionedObject.__init__(self)
     """
         Sample:
         self.ReactionCoefficients = {
