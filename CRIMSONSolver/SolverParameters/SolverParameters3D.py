@@ -1,4 +1,5 @@
 from CRIMSONCore.PropertyStorage import PropertyStorage
+from CRIMSONCore.VersionedObject import VersionedObject, Versions
 
 class CouplingType(object):
     enumNames = ["Explicit", "Implicit", "P-Implicit"]
@@ -139,6 +140,17 @@ class SolverParameters3D(PropertyStorage):
                 ]
             },
             {
+                "Output parameters":
+                [
+                    {
+                        "Output wall shear stress": True
+                    },
+                    {
+                        "Output error indicator": True
+                    }
+                ]
+            },
+            {
                 "Scalar simulation parameters":
                 [
                     {
@@ -181,15 +193,58 @@ class SolverParameters3D(PropertyStorage):
 
                 ]
             },
-            {
-                "Output parameters":
-                [
-                    {
-                        "Output wall shear stress": True
-                    },
-                    {
-                        "Output error indicator": True
-                    }
-                ]
-            },
         ]
+
+    def upgrade_Pre2021_To_v2021A(self):
+        print('Applying v2021A upgrades to Solver Parameters...')
+        self.Iterations = []
+        
+        scalarSimulationParameters =  {
+            "Scalar simulation parameters":
+            [
+                {
+                    "Scalar Influx Coefficient": 0.5,
+                    "attributes": {"minimum": 0.01, "maximum": 1.0}
+                },
+
+                # If you want to run the fluid solver only for a few timesteps before running the scalar simulation
+                # (e.g., to let the fluids "settle out"), set this to something other than timestep 1.
+                # Note that timesteps are 1-based. This is NOT an iteration.
+                {
+                    "Start scalar simulation at timestep": 1,
+                    "attributes": {"minimum": 1}
+                },
+                {
+                    "End Flow Simulation Early":
+                    [
+                        # If you want to stop running the flowsolver after a certain number of timesteps, but continue running
+                        # the scalar problem after that, enable this option and set the timestep to stop on
+                        #
+                        # The names are a bit redundant because I think it looks up the name of the property only
+                        # based on the innermost name
+                        {
+                            "End Flow Simulation Early Enable": False,
+                        },
+
+                        {
+                            "End Flow Simulation at Timestep": 1,
+                            "attributes": {"minimum": 1}
+                        }
+                    ]
+                },
+
+                # Type type of scalar discontinuity capturing, 
+                # 1 0 is the one we usually use.
+                {
+                    "Scalar Discontinuity Capturing": u"1 0"
+                },
+
+
+            ]
+        }
+
+        self.properties.append(scalarSimulationParameters)
+
+    def upgradeObject(self, toVersion):
+        if(toVersion == Versions.v2021A):
+            self.upgrade_Pre2021_To_v2021A()

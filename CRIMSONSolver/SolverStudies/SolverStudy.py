@@ -27,6 +27,7 @@ from CRIMSONSolver.BoundaryConditions import NoSlip, InitialPressure, RCR, ZeroP
 from CRIMSONSolver.Materials import MaterialData
 from CRIMSONSolver.ScalarProblem import Scalar, ScalarProblem, ScalarNeumann, ScalarDirichlet, InitialConcentration, NoFlux
 from CRIMSONSolver.ScalarProblem.GenerateScalarProblemSpecification import GenerateSpecification
+from CRIMSONCore.VersionedObject import VersionedObject, Versions
 
 def _getThisScriptFolder():
     scriptFolder = os.path.dirname(os.path.realpath(__file__))
@@ -301,7 +302,7 @@ class MaterialFaceInfo(object):
                 if self.vesselForestData is not None else (0, 0)
 
 
-class SolverStudy(object):
+class SolverStudy(VersionedObject):
     def __init__(self):
         self.meshNodeUID = ""
         self.solverParametersNodeUID = ""
@@ -1472,3 +1473,14 @@ class SolverStudy(object):
                             solutionStorage.arrays[materialData.name].data[info[1]] = value
                             #
         return solutionStorage
+
+    def upgrade_Pre2021_To_v2021A(self):
+        print('Applying v2021A upgrades to Solver Study...')
+
+        self.scalarProblemNodeUID = ''
+        self.scalarNodeUIDs = []
+        self.enableScalarSimulation = False
+
+    def upgradeObject(self, toVersion):
+        if(toVersion == Versions.v2021A):
+            self.upgrade_Pre2021_To_v2021A()

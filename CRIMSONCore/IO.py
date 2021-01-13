@@ -1,4 +1,7 @@
+from __future__ import print_function
+
 import cPickle
+from CRIMSONCore.VersionedObject import VersionedObject
 
 """
     NOTE: The methods in this file are called by
@@ -11,6 +14,19 @@ def saveToFile(obj, filename):
 
 def loadFromFile(filename):
     with open(filename, 'rb') as f:
-        return cPickle.load(f)
+        obj = cPickle.load(f)
+
+    if(obj is None):
+        print('Loaded obj from fileName "', filename, '" that contained no data.', sep='')
+        return obj
+    
+    if(isinstance(obj, VersionedObject)):
+        obj.upgradeToLatest()
+    
+    else:
+        print('Loaded object of type "', obj.__class__.__name__, ' from filename "', fileName, '" that was not upgradable.', sep='')
+
+    return obj
+        
 
 

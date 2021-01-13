@@ -1,3 +1,5 @@
+from CRIMSONCore.VersionedObject import VersionedObject, Versions
+
 class PropertyAccessor(object):
     def __init__(self, propertyList):
         self.propertyList = propertyList
@@ -56,7 +58,7 @@ class PropertyAccessor(object):
         propertyList[index][valueKey] = value
 
 
-class PropertyStorage(object):
+class PropertyStorage(VersionedObject):
     '''
     The PropertyStorage class is a convenience class for communicating the various properties of a boundary condition
     or solver parameters to the C++ code for the user to edit.
