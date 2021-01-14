@@ -20,6 +20,7 @@ def createCRIMSONModule(moduleName, solverSetupManagerName, bcNames, materialNam
         shutil.rmtree(moduleName)
     os.mkdir(moduleName)
     
+    # mustache data?
     mustacheData = {
         'ModuleName': moduleName,
         'SolverSetupManagerName': solverSetupManagerName,

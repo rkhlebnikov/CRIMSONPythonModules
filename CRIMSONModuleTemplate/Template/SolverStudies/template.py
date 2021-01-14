@@ -5,7 +5,9 @@ from PythonQt.CRIMSON import Utils
 from CRIMSONCore.SolutionStorage import SolutionStorage
 from {{ModuleName}}.BoundaryConditions import ({{#BoundaryConditionNames}}{{name}}, {{/BoundaryConditionNames}})
 
-class {{ClassName}}(object):
+from CRIMSONCore.VersionedObject import VersionedObject, Versions
+
+class {{ClassName}}(VersionedObject):
     def __init__(self):
         self.meshNodeUID = ""
         self.solverParametersNodeUID = ""

@@ -7,7 +7,7 @@ from CRIMSONSolver.SolverParameters.SolverParameters3D import SolverParameters3D
 from CRIMSONSolver.SolverStudies.SolverStudy import SolverStudy
 from CRIMSONSolver.Materials import DeformableWallMaterial, AnisoDeformableWallMaterial
 
-
+# This does not seem to need to be versioned, it's not saved in MITK files.
 class CRIMSONSolverSolverSetupManager(object):
     humanReadableName = "CRIMSON Solver"
 
