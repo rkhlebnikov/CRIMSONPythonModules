@@ -492,6 +492,12 @@ class SolverStudy(VersionedObject):
             raise RuntimeError(errorMessage)
         
         if(enableScalar):
+            # As of the time of writing, the scalar flowsolver only supports 20 scalars.
+            maxNumberOfScalars = 20
+
+            if(len(scalars) > maxNumberOfScalars):
+                print('Warning: Doing a solver setup with', len(scalars), 'scalars, but the scalar solver only officially supports', maxNumberOfScalars, 'scalars at this time.')
+
             print('With scalars:')
             for scalar in scalars:
                 print('Symbol: ', scalar.getScalarSymbol())

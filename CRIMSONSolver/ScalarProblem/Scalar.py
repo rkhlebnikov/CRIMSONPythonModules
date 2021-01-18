@@ -58,7 +58,7 @@ class Scalar(PropertyStorage):
 
         # Qt is very heavily invested in Unicode
         self._scalarSymbol = u"new Scalar"
-        self._reactionString = u""
+        self._reactionString = u"0"
 
     def getScalarSymbol(self):
         return self._scalarSymbol
