@@ -12,9 +12,9 @@ class ScalarNeumann(FaceData):
         self.properties = [
             {
                 "value": 0.0,
-                #"attributes": {
-                # TODO: What should the suffix be?
-                #"suffix": u" g/(mm\u00B7s\u00B2)"
-                #    }
+                "attributes": {
+                    #superscript four
+                    "suffix": u" mol/mm\u2074)"
+                }
             },
         ]
