@@ -2,7 +2,7 @@ from CRIMSONSolver.BoundaryConditionSets.BoundaryConditionSet import BoundaryCon
 from CRIMSONSolver.BoundaryConditions import InitialPressure, NoSlip, PrescribedVelocities, RCR, ZeroPressure, \
     DeformableWall, Netlist, PCMRI
 from CRIMSONSolver.ScalarProblem import Scalar, ScalarProblem
-from CRIMSONSolver.ScalarProblem import ScalarDirichlet, ScalarNeumann, InitialConcentration, NoFlux
+from CRIMSONSolver.ScalarProblem import ScalarDirichlet, ScalarNeumann, InitialConcentration, NoFlux, ConsistentFlux
 from CRIMSONSolver.SolverParameters.SolverParameters3D import SolverParameters3D
 from CRIMSONSolver.SolverStudies.SolverStudy import SolverStudy
 from CRIMSONSolver.Materials import DeformableWallMaterial, AnisoDeformableWallMaterial
@@ -31,7 +31,8 @@ class CRIMSONSolverSolverSetupManager(object):
         self.scalarBCClasses = {"Scalar Dirichlet": ScalarDirichlet.ScalarDirichlet,
                                 "Scalar Neumann":   ScalarNeumann.ScalarNeumann,
                                 "Initial Concentration": InitialConcentration.InitialConcentration,
-                                "No Flux": NoFlux.NoFlux}
+                                "No Flux": NoFlux.NoFlux,
+                                "Consistent Flux": ConsistentFlux.ConsistentFlux}
     # Boundary condition sets
     def getBoundaryConditionSetNames(self):
         return self.boundaryConditionSetClasses.keys()

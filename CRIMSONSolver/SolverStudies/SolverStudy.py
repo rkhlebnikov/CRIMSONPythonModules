@@ -25,7 +25,7 @@ from CRIMSONSolver.SolverStudies.Timer import Timer
 from CRIMSONSolver.BoundaryConditions import NoSlip, InitialPressure, RCR, ZeroPressure, PrescribedVelocities, \
     DeformableWall, Netlist, PCMRI
 from CRIMSONSolver.Materials import MaterialData
-from CRIMSONSolver.ScalarProblem import Scalar, ScalarProblem, ScalarNeumann, ScalarDirichlet, InitialConcentration, NoFlux
+from CRIMSONSolver.ScalarProblem import Scalar, ScalarProblem, ScalarNeumann, ScalarDirichlet, InitialConcentration, NoFlux, ConsistentFlux
 from CRIMSONSolver.ScalarProblem.GenerateScalarProblemSpecification import GenerateSpecification
 from CRIMSONCore.VersionedObject import VersionedObject, Versions
 
@@ -165,6 +165,10 @@ set_scalar_flux {} {} 0.0
 '''.format(faceFileName, scalarNumber)
             
             boundaryConditionString += faceLines
+
+        elif(isinstance(scalarBC, ConsistentFlux.ConsistentFlux)):
+            # "Do nothing" boundary condition
+            pass
 
         else:
             print("Unexpected scalar boundary condition of type '", str(type(scalarBC)))
