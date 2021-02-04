@@ -154,7 +154,8 @@ class SolverParameters3D(PropertyStorage):
                 "Scalar simulation parameters":
                 [
                     {
-                        "Scalar Influx Coefficient": 0.5,
+                        # This parameter has no units
+                        "Scalar Influx Coefficient": 1.0,
                         "attributes": {"minimum": 0.01, "maximum": 1.0}
                     },
 

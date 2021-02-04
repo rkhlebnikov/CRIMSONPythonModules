@@ -38,7 +38,14 @@ class Scalar(PropertyStorage):
         PropertyStorage.__init__(self)
         self.properties = [
                 {
-                    "Diffusion coefficient": 1.1
+                    "Diffusion coefficient": 1.1,
+                    "attributes": 
+                    {
+                        # Some link in the chain does not seem to support unicode chars,
+                        # So I have to write unicode like this:
+                        # (\u00B2 is Superscript Two)
+                        "suffix": u"mm\u00B2/s"
+                    }
                 },
                 {
                     # Set this to true to have residuals be factored in by the flowsolver

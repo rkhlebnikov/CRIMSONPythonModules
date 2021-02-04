@@ -12,9 +12,10 @@ class ScalarDirichlet(FaceData):
         self.properties = [
             {
                 "value": 0.0,
-                #"attributes": {
-                # TODO: What should the suffix be?
-                #"suffix": u" g/(mm\u00B7s\u00B2)"
-                #    }
+                "attributes": 
+                {
+                    #\u00B3 is Superscript three
+                    "suffix": u" mol/mm\u00B3"
+                }
             },
         ]
