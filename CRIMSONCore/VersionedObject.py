@@ -45,10 +45,12 @@ class Versions:
         Every time you add or remove a field to any object, make a new static field on this class.
     """
     Pre2021 = 'Pre2021'
-    v2021A = '2021A'
+    # See git tags for when these versions were introduced
+    v2021A = '2021A' 
+    v2021B = '2021B'
 
     # the order in which upgrades should be applied
-    Sequence = [Pre2021, v2021A]
+    Sequence = [Pre2021, v2021A, v2021B]
     
     @staticmethod
     def indexOfVersion(versionToGetIndexOf):
@@ -64,7 +66,7 @@ class Versions:
 
 # Change this as needed when you add or remove fields from classes and need to preserve backwards compatibility with the original
 def GetCurrentVersion():
-    return Versions.v2021A
+    return Versions.v2021B
 
 """
     When a Python object is depickled, its fields get loaded as-is, which means that any fields that are added to a new version of Crimson will not be present.

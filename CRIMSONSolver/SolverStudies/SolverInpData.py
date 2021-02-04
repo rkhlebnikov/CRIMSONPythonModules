@@ -84,7 +84,28 @@ class SolverInpData():
 
         if(numberOfScalars > 0):
             cardiovascularModelingGroup['Scalar Influx Coefficient'] = props['Scalar Influx Coefficient']
-            cardiovascularModelingGroup['Scalar Discontinuity Capturing'] = props['Scalar Discontinuity Capturing']
+            
+            capturingValue = props['Scalar Discontinuity Capturing']
+            enableDiscontinuityCapturing = False
+
+            # Just out of extra caution, because a string is always truey, there should be no way for this to happen though
+            if(isinstance(capturingValue, str)):
+                print('An unexpected error occurred: Scalar discontinuity capturing was a string. This value should have been upgraded to a bool.')
+                if(capturingValue == u'1 0'):
+                    enableDiscontinuityCapturing = True
+                else:
+                    enableDiscontinuityCapturing = False
+            
+            else:
+                if(capturingValue):
+                    enableDiscontinuityCapturing = True
+                else:
+                    enableDiscontinuityCapturing = False
+
+
+            # We can omit this line completely if discontinuity capturing isn't enabled
+            if(enableDiscontinuityCapturing):
+                cardiovascularModelingGroup['Scalar Discontinuity Capturing'] = '1 0'
             
             cardiovascularModelingGroup['Scalar Start Time'] = props['Start scalar simulation at timestep']
             cardiovascularModelingGroup['End Solve Flow'] = props["End Flow Simulation Early Enable"]

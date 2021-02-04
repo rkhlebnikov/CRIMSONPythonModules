@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from CRIMSONCore.PropertyStorage import PropertyStorage
 from CRIMSONCore.VersionedObject import VersionedObject, Versions
 
@@ -249,6 +251,51 @@ class SolverParameters3D(PropertyStorage):
 
         self.properties.append(scalarSimulationParameters)
 
+    def upgrade_2021A_To_v2021B(self):
+        print('Applying v2021B upgrades to Solver Parameters...')
+
+        # Scalar Discontinuity Capturing simplification: It does not need to be a string, it can just be a checkbox.
+        if(len(self.properties) < 5):
+            print('An error occurred while upgrading: Scalar parameters should be section 3 in the main properties list, but there are only', len(self.properties), 'sections. Upgrade cancelled.')
+            return
+        
+        scalarParametersSection = self.properties[4]
+
+        if("Scalar simulation parameters" not in scalarParametersSection):
+            print('An error occurred while upgrading: Unable to locate scalar parameters. Upgrade cancelled')
+            return
+        
+        scalarSection = scalarParametersSection["Scalar simulation parameters"]
+
+        if(len(scalarSection) < 4):
+            print('An error occurred while upgrading: Scalar section should be item 3 in the scalar parameters list, but there are only', len(scalarSection), 'items. Upgrade cancelled.')
+            return
+        
+        scalarDiscontinuitySection = scalarSection[3]
+
+        if("Scalar Discontinuity Capturing" not in scalarDiscontinuitySection):
+            print('An error occurred while upgrading: Scalar Discontinuity Capturing value not in scalar section. Upgrade cancelled.')
+            return
+
+        capturingValue = scalarDiscontinuitySection["Scalar Discontinuity Capturing"]
+
+        if(isinstance(capturingValue, bool)):
+            print('Warning: Possible mismarked version, scalar discontinuity capturing is already a bool. Taking no action.')
+            return
+
+        trueValue = u'1 0'
+        boolValue = False
+        if(capturingValue == trueValue):
+            print('Detected true value "', trueValue, '", enabling discontinuity capturing.', sep='')
+            boolValue = True
+        else:
+            print('Did not detect true, disabling discontinuity capturing.')
+        
+        scalarDiscontinuitySection["Scalar Discontinuity Capturing"] = boolValue
+
     def upgradeObject(self, toVersion):
         if(toVersion == Versions.v2021A):
             self.upgrade_Pre2021_To_v2021A()
+
+        elif(toVersion == Versions.v2021B):
+            self.upgrade_2021A_To_v2021B()
