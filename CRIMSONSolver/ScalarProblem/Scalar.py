@@ -97,13 +97,34 @@ class Scalar(PropertyStorage):
         if("" == reactionEquation_NoNewline):
             print('Reaction equation cannot be left blank.')
             return False
+        
+        # Error conditions
+        if('$' in reactionEquation_NoNewline):
+            print("Detected reaction term placeholder character '$' in reaction expression, please remove / replace this before continuing.")
+            return False
 
-        invalidSymbols = {"#", "'", '"'}
+        if('=' in reactionEquation_NoNewline):
+            print("Detected '=' character in reaction. This operator can cause severe problems in the reaction code and is not allowed in reaction equations.")
+            return False
 
-        for invalidSymbol in invalidSymbols:
-            if(invalidSymbol in reactionEquation_NoNewline):
-                print("Reaction equation '", reactionEquation_NoNewline, "' contains an invalid symbol '", invalidSymbol, "'.", sep='')
-                return False
+        if('#' in reactionEquation_NoNewline):
+            print("Detected '#' character in reaction. This operator can cause severe problems in the reaction code and is not allowed in reaction equations.")
+            return False
+        
+        if("'" in reactionEquation_NoNewline):
+            print("Detected apostrophe (') character in reaction. The apostrophe is not a transpose, this character can cause severe problems in the reaction code and is not allowed in reaction equations.")
+            return False
+        
+        if('"' in reactionEquation_NoNewline):
+            print('Detected quote (") character in reaction. This character can cause severe problems in the reaction code and is not allowed in reaction equations.')
+            return False
+
+        # Warning conditions
+        if('***' in reactionEquation_NoNewline):
+            print("Warning: Detected possible typo '***' in reaction, this is not a valid Python operator.")
+
+        if('^' in reactionEquation_NoNewline):
+            print("Warning: Detected '^' character in reaction. Note that this is NOT 'to the power of', it's 'bitwise XOR', is this what you intended?")
 
         symbolValue = 2
         for symbol in symbols:
