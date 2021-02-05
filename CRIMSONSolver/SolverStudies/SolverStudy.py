@@ -23,7 +23,7 @@ from CRIMSONSolver.SolverStudies.FileList import FileList
 from CRIMSONSolver.SolverStudies.SolverInpData import SolverInpData
 from CRIMSONSolver.SolverStudies.Timer import Timer
 from CRIMSONSolver.BoundaryConditions import NoSlip, InitialPressure, RCR, ZeroPressure, PrescribedVelocities, \
-    DeformableWall, Netlist, PCMRI
+    DeformableWall, Netlist, PCMRI, Pressure
 from CRIMSONSolver.Materials import MaterialData
 from CRIMSONSolver.ScalarProblem import Scalar, ScalarProblem, ScalarNeumann, ScalarDirichlet, InitialConcentration, NoFlux, ConsistentFlux
 from CRIMSONSolver.ScalarProblem.GenerateScalarProblemSpecification import GenerateSpecification
@@ -955,6 +955,13 @@ class SolverStudy(VersionedObject):
                 for faceId in validFaceIdentifiers(bc):
                     supreFile.write('zero_pressure {0}.ebc\n'.format(faceIndicesAndFileNames[faceId][1]))
                 supreFile.write('\n')
+
+            elif is_boundary_condition_type(bc, Pressure.Pressure):
+                for faceId in validFaceIdentifiers(bc):
+                    pressureValue = bc.getProperties()['Pressure']
+                    supreFile.write('pressure {0}.ebc {1}\n'.format(faceIndicesAndFileNames[faceId][1], pressureValue))
+                supreFile.write('\n')
+
 
             elif is_boundary_condition_type(bc, PrescribedVelocities.PrescribedVelocities):
                 faceInfoFile = fileList['faceInfo.dat']
