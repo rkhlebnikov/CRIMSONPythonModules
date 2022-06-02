@@ -13,7 +13,7 @@ Creating blank CRIMSON python module
 The easiest way to get started with the CRIMSON python module development is to use a CRIMSONModuleTemplate to generate
 a useful module skeleton which can then be populated with functional code. To use the module template, you need to:
 
- - Download and extract the `CRIMSONModuleTemplate <https://umich.box.com/shared/static/iwpqj9eogasmic8mr131ixk0juteqk6g.zip>`_ package
+ - Download and extract the `CRIMSONModuleTemplate <https://www.dropbox.com/s/jz4fs4wh70ouu27/CRIMSONModuleTemplate.zip?dl=0>`_ package
  - Install `python 2.7 <https://www.python.org/downloads/release/python-2711/>`_ (if you don't have it already)
  - Use python's ``pip`` command to install the ``pystache`` package. To do this, execute the following command from your terminal::
  
